@@ -1,0 +1,277 @@
+.products-page {
+  max-width: 1440px;
+  margin: 0 auto;
+  padding: 32px 24px;
+  color: #111827;
+}
+
+.products-header,
+.products-filters,
+.products-pagination {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.products-header {
+  margin-bottom: 24px;
+}
+
+.products-header h1 {
+  margin: 0 0 6px;
+  font-size: 26px;
+  font-weight: 700;
+}
+
+.products-header p {
+  margin: 0;
+  color: #6b7280;
+}
+
+.primary-btn {
+  padding: 11px 18px;
+  border-radius: 8px;
+  background: #111827;
+  color: white;
+  text-decoration: none;
+  font-weight: 600;
+}
+
+.products-panel {
+  padding: 24px;
+  background: #fff;
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+}
+
+.products-filters {
+  margin-bottom: 24px;
+  flex-wrap: wrap;
+}
+
+.products-filters form {
+  display: flex;
+  flex: 1;
+  gap: 8px;
+  min-width: 240px;
+}
+
+.products-filters input,
+.products-filters select,
+.products-filters button,
+.products-pagination button {
+  padding: 10px 12px;
+  border: 1px solid #d1d5db;
+  border-radius: 8px;
+  background: white;
+  font: inherit;
+}
+
+.products-filters input {
+  flex: 1;
+  min-width: 0;
+}
+
+.products-filters button {
+  cursor: pointer;
+}
+
+.products-table-wrapper {
+  overflow-x: auto;
+}
+
+.products-table {
+  width: 100%;
+  border-collapse: collapse;
+  text-align: left;
+}
+
+.products-table th,
+.products-table td {
+  padding: 14px 12px;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.products-table th {
+  color: #6b7280;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.product-info {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 220px;
+}
+
+.product-info img,
+.product-placeholder {
+  width: 56px;
+  height: 56px;
+  object-fit: cover;
+  border-radius: 8px;
+  background: #f3f4f6;
+}
+
+.product-placeholder {
+  display: grid;
+  place-items: center;
+  font-size: 11px;
+  color: #9ca3af;
+}
+
+.product-info strong,
+.product-info small {
+  display: block;
+}
+
+.product-info small {
+  margin-top: 4px;
+  color: #6b7280;
+}
+
+.status {
+  display: inline-block;
+  padding: 5px 9px;
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.status-active {
+  background: #dcfce7;
+  color: #166534;
+}
+
+.status-draft {
+  background: #f3f4f6;
+  color: #374151;
+}
+
+.status-sold_out {
+  background: #fee2e2;
+  color: #991b1b;
+}
+
+.status-hidden {
+  background: #fef3c7;
+  color: #92400e;
+}
+
+.products-pagination {
+  margin-top: 20px;
+}
+
+.products-pagination button {
+  margin-left: 8px;
+  cursor: pointer;
+}
+
+.products-pagination button:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.error {
+  color: #dc2626;
+}
+
+.empty-state {
+  padding: 40px !important;
+  text-align: center;
+  color: #6b7280;
+}
+
+@media (max-width: 768px) {
+  .products-page {
+    padding: 16px;
+  }
+
+  .products-header {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .products-panel {
+    padding: 14px;
+  }
+
+  .products-filters {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .products-filters form {
+    min-width: 0;
+    flex: auto;
+  }
+}
+
+
+.product-form {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 20px;
+  max-width: 1000px;
+  margin-top: 24px;
+  padding: 24px;
+  background: white;
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+}
+
+.product-form label {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  font-weight: 500;
+  font-size: 14px;
+}
+
+.product-form input,
+.product-form select,
+.product-form textarea {
+  width: 100%;
+  min-width: 0;
+  padding: 11px 12px;
+  border: 1px solid #d1d5db;
+  border-radius: 8px;
+  font: inherit;
+  background: white;
+  color: #111827;
+}
+
+.product-form textarea {
+  min-height: 100px;
+  resize: vertical;
+}
+
+.product-form-actions {
+  grid-column: 1 / -1;
+  display: flex;
+  justify-content: flex-end;
+}
+
+.product-form-actions button {
+  padding: 12px 20px;
+  border: 0;
+  border-radius: 8px;
+  background: #111827;
+  color: white;
+  cursor: pointer;
+}
+
+.product-form-actions button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+@media (max-width: 640px) {
+  .product-form {
+    grid-template-columns: 1fr;
+    padding: 16px;
+  }
+}

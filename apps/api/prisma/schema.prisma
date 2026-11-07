@@ -1,0 +1,119 @@
+generator client {
+  provider     = "prisma-client"
+  output       = "../src/generated/prisma"
+  moduleFormat = "esm"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum UserRole {
+  ADMIN
+  CUSTOMER
+}
+
+model User {
+  id        String   @id @default(uuid())
+  email     String   @unique
+  password  String
+  name      String?
+  role      UserRole @default(CUSTOMER)
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updateAt  DateTime @updatedAt
+
+  refreshSessions RefreshSession[]
+
+  @@map("users")
+}
+
+model RefreshSession {
+  id        String    @id @default(uuid())
+  userId    String
+  tokenHash String    @unique
+  expiresAt DateTime
+  revokedAt DateTime?
+  createdAt DateTime  @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@map("refresh_sessions")
+}
+
+enum ProductStatus {
+  DRAFT
+  ACTIVE
+  SOLD_OUT
+  HIDDEN
+}
+
+model Brand {
+  id        String   @id @default(uuid())
+  name      String
+  slug      String   @unique
+  logoUrl   String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  products Product[]
+
+  @@map("brands")
+}
+
+model Category {
+  id          String   @id @default(uuid())
+  name        String
+  slug        String   @unique
+  description String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  products Product[]
+
+  @@map("categories")
+}
+
+model Product {
+  id               String         @id @default(uuid())
+  name             String
+  slug             String         @unique
+  description      String?        @db.Text
+  price            Int
+  originalPrice    Int?
+  size             String
+  conditionPercent Int?
+  conditionNote    String?        @db.Text
+  stock            Int            @default(1)
+  status           ProductStatus  @default(DRAFT)
+  brandId          String
+  categoryId       String
+  brand            Brand          @relation(fields: [brandId], references: [id], onDelete: Restrict)
+  category         Category       @relation(fields: [categoryId], references: [id], onDelete: Restrict)
+  images           ProductImage[]
+  createdAt        DateTime       @default(now())
+  updatedAt        DateTime       @updatedAt
+
+  @@index([brandId])
+  @@index([categoryId])
+  @@index([status])
+  @@index([price])
+  @@index([createdAt])
+  @@map("products")
+}
+
+model ProductImage {
+  id        String   @id @default(uuid())
+  productId String
+  fileId    String   @unique
+  url       String
+  alt       String?
+  sortOrder Int      @default(0)
+  isPrimary Boolean  @default(false)
+  product   Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+
+  @@index([productId])
+  @@map("product_image")
+}
