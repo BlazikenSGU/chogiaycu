@@ -10,6 +10,7 @@ import { BrandsModule } from './brands/brands.module.js';
 import { CategoriesModule } from './categories/categories.module.js';
 import { ProductsModule } from './products/products.module.js';
 import { UploadsModule } from './uploads/uploads.module.js';
+import { HealthModule } from './health/health.module.js';
 
 @Module({
   imports: [
@@ -23,6 +24,7 @@ import { UploadsModule } from './uploads/uploads.module.js';
     CategoriesModule,
     ProductsModule,
     UploadsModule,
+    HealthModule,
   ],
   controllers: [AppController],
   providers: [AppService],
