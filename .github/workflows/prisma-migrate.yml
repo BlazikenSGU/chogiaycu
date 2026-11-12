@@ -25,15 +25,15 @@ jobs:
 
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
-
-      - name: Check migration status
-        working-directory: apps/api
-        env:
-          DATABASE_URL: ${{ secrets.NEON_DIRECT_URL }}
-        run: pnpm exec prisma migrate status
-
+    
       - name: Apply migrations
         working-directory: apps/api
         env:
           DATABASE_URL: ${{ secrets.NEON_DIRECT_URL }}
         run: pnpm exec prisma migrate deploy
+
+      - name: Verify migration status
+        working-directory: apps/api
+        env:
+          DATABASE_URL: ${{ secrets.NEON_DIRECT_URL }}
+        run: pnpm exec prisma migrate status
