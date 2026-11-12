@@ -19,6 +19,7 @@ async function bootstrap() {
   app.enableCors({
     origin: [
       'http://localhost:5173',
+      'https://chogiaycu.pages.dev',
       'https://chogiaycu.store',
       'https://www.chogiaycu.store',
     ],
