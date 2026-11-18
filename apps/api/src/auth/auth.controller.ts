@@ -26,12 +26,14 @@ export class AuthController {
     constructor(private readonly auth: AuthService) { }
 
     private cookieOptions() {
+        const isProduction = process.env.NODE_ENV === 'production';
+
         return {
             httpOnly: true,
-            secure: process.env.NODE_ENV === 'production',
-            sameSite: 'lax' as const,
+            secure: isProduction,
+            sameSite: isProduction ? 'none' as const : 'lax' as const,
             path: '/api/v1/auth',
-            maxAge: 7 * 86400000,
+            maxAge: 7 * 24 * 60 * 60 * 1000,
         };
     }
 
@@ -79,6 +81,11 @@ export class AuthController {
         if (token) await this.auth.logout(token);
 
         res.clearCookie('refresh_token', {
+            httpOnly: true,
+            secure: process.env.NODE_ENV === 'production',
+            sameSite: process.env.NODE_ENV === 'production'
+                ? 'none'
+                : 'lax',
             path: '/api/v1/auth',
         });
 
@@ -133,6 +140,11 @@ export class AuthController {
         );
 
         res.clearCookie('refresh_token', {
+            httpOnly: true,
+            secure: process.env.NODE_ENV === 'production',
+            sameSite: process.env.NODE_ENV === 'production'
+                ? 'none'
+                : 'lax',
             path: '/api/v1/auth',
         });
 
