@@ -1,16 +1,16 @@
 
-import { useEffect, useMemo, useState } from 'react';
+import { useState } from 'react';
 import {
   Search, SlidersHorizontal, Heart, Bell,
-  ShoppingBag, ArrowRight, Footprints,
+  ShoppingBag,
   Home, UserRound, Package, Menu,
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
-import api from '../../../lib/api';
-import type {
-  Product,
-  PaginatedProducts,
-} from '../../products/types/product.types';
+// import api from '../../../lib/api';
+// import type {
+//   Product,
+//   PaginatedProducts,
+// } from '../../products/types/product.types';
 import { mockProducts } from '../data/mockProducts';
 import ProductCard from '../components/ProductCard';
 
@@ -26,54 +26,46 @@ import { useAuth } from '../../auth/hooks/useAuth';
 
 const brands = ['Tất cả', ...brandItems.map((item) => item.name)];
 
-const money = (value: number) =>
-  new Intl.NumberFormat('vi-VN', {
-    style: 'currency',
-    currency: 'VND',
-  }).format(value);
-
 export default function HomePage() {
-  const [products, setProducts] = useState<Product[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(false);
+  // const [products, setProducts] = useState<Product[]>([]);
   const [search, setSearch] = useState('');
   const [brand, setBrand] = useState('Tất cả');
 
   const { user, status, isAuthenticated } = useAuth();
   const displayName = user?.name?.trim() || user?.email || 'Khách';
 
-  useEffect(() => {
-    let active = true;
+  // useEffect(() => {
+  //   let active = true;
 
-    api.get<PaginatedProducts>('/products', {
-      params: { page: 1, limit: 24, sort: 'newest' },
-    })
-      .then(({ data }) => {
-        if (active) setProducts(data.data);
-      })
-      .catch(() => {
-        if (active) setError(true);
-      })
-      .finally(() => {
-        if (active) setLoading(false);
-      });
+  //   // api.get<PaginatedProducts>('/products', {
+  //   //   params: { page: 1, limit: 24, sort: 'newest' },
+  //   // })
+  //   //   .then(({ data }) => {
+  //   //     if (active) setProducts(data.data);
+  //   //   })
+  //   //   .catch(() => {
+  //   //     if (active) setError(true);
+  //   //   })
+  //   //   .finally(() => {
+  //   //     if (active) setLoading(false);
+  //   //   });
 
-    return () => { active = false; };
-  }, []);
+  //   return () => { active = false; };
+  // }, []);
 
-  const filtered = useMemo(() => {
-    return products.filter((product) => {
-      const matchesSearch = product.name
-        .toLowerCase()
-        .includes(search.toLowerCase());
+  // const filtered = useMemo(() => {
+  //   return products.filter((product) => {
+  //     const matchesSearch = product.name
+  //       .toLowerCase()
+  //       .includes(search.toLowerCase());
 
-      const matchesBrand =
-        brand === 'Tất cả' ||
-        product.brand?.name.toLowerCase() === brand.toLowerCase();
+  //     const matchesBrand =
+  //       brand === 'Tất cả' ||
+  //       product.brand?.name.toLowerCase() === brand.toLowerCase();
 
-      return matchesSearch && matchesBrand;
-    });
-  }, [products, search, brand]);
+  //     return matchesSearch && matchesBrand;
+  //   });
+  // }, [products, search, brand]);
 
   return (
     <div className="min-h-screen bg-white pb-20 text-[#171717] md:pb-0">
