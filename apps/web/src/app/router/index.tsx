@@ -9,10 +9,6 @@ import ProtectedRoute from './ProtectedRoute';
 import ProfilePage from '../../features/customer/pages/ProfilePage';
 
 const router = createBrowserRouter([
-    {
-        path: '/',
-        element: <Navigate to="/shop" replace />
-    },
     ...publicRoutes,
     ...adminRoutes,
     {
