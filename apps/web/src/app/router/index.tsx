@@ -1,7 +1,6 @@
 import {
     createBrowserRouter,
     RouterProvider,
-    Navigate,
 } from 'react-router-dom';
 import { adminRoutes } from './AdminRoutes';
 import { publicRoutes } from './PublicRoutes';
