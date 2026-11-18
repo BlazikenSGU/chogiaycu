@@ -25,6 +25,8 @@ interface AuthProviderProps {
     children: ReactNode;
 }
 
+const AUTH_SESSION_KEY = '86market_has_session';
+
 export function AuthProvider({
     children,
 }: AuthProviderProps) {
@@ -33,9 +35,15 @@ export function AuthProvider({
 
     const sessionVersion = useRef(0);
 
+
     useEffect(() => {
         let active = true;
         const version = sessionVersion.current;
+
+        if (localStorage.getItem(AUTH_SESSION_KEY) !== '1') {
+            setStatus('unauthenticated');
+            return;
+        }
 
         async function restoreSession() {
             try {
@@ -48,9 +56,8 @@ export function AuthProvider({
                     setStatus('authenticated');
                 }
             } catch {
-                if (
-                    active && version === sessionVersion.current
-                ) {
+                if (active && version === sessionVersion.current) {
+                    localStorage.removeItem(AUTH_SESSION_KEY);
                     tokenStore.clear();
                     setUser(null);
                     setStatus('unauthenticated');
@@ -65,6 +72,7 @@ export function AuthProvider({
         };
     }, []);
 
+
     const login = useCallback(
         async (data: LoginDto): Promise<AuthUser> => {
             const res = await authApi.login(data);
@@ -72,6 +80,7 @@ export function AuthProvider({
             sessionVersion.current += 1;
 
             tokenStore.set(res.accessToken);
+            localStorage.setItem(AUTH_SESSION_KEY, '1');
             setUser(res.user);
             setStatus('authenticated');
 
@@ -86,6 +95,7 @@ export function AuthProvider({
             sessionVersion.current += 1;
 
             tokenStore.set(res.accessToken);
+            localStorage.setItem(AUTH_SESSION_KEY, '1');
             setUser(res.user);
             setStatus('authenticated');
 
@@ -98,7 +108,7 @@ export function AuthProvider({
             sessionVersion.current += 1;
 
             invalidateAuthSession();
-
+            localStorage.removeItem(AUTH_SESSION_KEY);
             setUser(null);
             setStatus('unauthenticated');
 
