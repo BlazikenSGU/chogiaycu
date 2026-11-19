@@ -32,7 +32,6 @@ type ViolationResult = {
 export class AuthRateLimitService {
     private readonly loginLockMinutes = [5, 30, 60, 360];
     constructor(private readonly prisma: PrismaService) { }
-    private readonly maxAttempts = 5;
     private readonly resetAfterMs = 24 * 60 * 60 * 1000;
 
     private makeKey(input: RateLimitKey): string {
@@ -157,7 +156,7 @@ export class AuthRateLimitService {
                     : current.lockLevel;
 
                 const shouldLock =
-                    attempts >= this.maxAttempts;
+                    attempts >= policy.maxAttempts;
 
                 const lockLevel = shouldLock
                     ? previousLevel + 1
