@@ -46,9 +46,9 @@ export class MailService {
       const { data, error } = await this.resend.emails.send({
         from,
         to: [to],
-        subject: '86Market - Đặt lại mật khẩu',
+        subject: '72Market - Đặt lại mật khẩu',
         text: [
-          'Bạn đã yêu cầu đặt lại mật khẩu 86Market.',
+          'Bạn đã yêu cầu đặt lại mật khẩu 72Market.',
           '',
           `Đặt lại mật khẩu: ${resetUrl}`,
           '',

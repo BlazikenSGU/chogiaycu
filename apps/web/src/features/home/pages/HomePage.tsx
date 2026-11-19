@@ -208,7 +208,7 @@ export default function HomePage() {
               </p>
 
               <h1 className="truncate text-xl font-bold tracking-tight">
-                {isAuthenticated ? displayName : '86Market'}
+                {isAuthenticated ? displayName : '72Market'}
               </h1>
             </div>
           </div>
@@ -302,7 +302,7 @@ export default function HomePage() {
           </div>
           <img
             src="/images/home/hero-shoes.webp"
-            alt="Giày sneaker 86Market"
+            alt="Giày sneaker 72Market"
             className="absolute right-[-6%] bottom-[0%] h-[85%] w-[58%] object-contain md:right-0 md:h-full"
           />
         </section>

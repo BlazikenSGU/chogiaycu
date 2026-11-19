@@ -99,7 +99,7 @@ export default function ResetPasswordPage() {
             ) : (
                 <form onSubmit={e => void submit(e)} noValidate>
                     <p className="auth-help">
-                        Tạo mật khẩu mới cho tài khoản 86Market.
+                        Tạo mật khẩu mới cho tài khoản 72Market.
                         Mật khẩu cần có ít nhất 8 ký tự.
                     </p>
 

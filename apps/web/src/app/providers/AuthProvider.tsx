@@ -25,7 +25,7 @@ interface AuthProviderProps {
     children: ReactNode;
 }
 
-const AUTH_SESSION_KEY = '86market_has_session';
+const AUTH_SESSION_KEY = '72market_has_session';
 
 export function AuthProvider({
     children,
