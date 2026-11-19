@@ -8,8 +8,7 @@ import {
     Max,
     MaxLength,
     Min,
-    IsEnum,
-    MIN
+    IsEnum
 } from 'class-validator';
 import { ProductStatus } from '../../generated/prisma/enums.js';
 
