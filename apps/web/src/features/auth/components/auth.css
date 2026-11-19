@@ -134,7 +134,8 @@
     color: #fff;
     font-size: 14px;
     font-weight: 600;
-    cursor: pointer
+    cursor: pointer;
+    margin-bottom: .7rem;
 }
 
 .auth-submit:hover:not(:disabled) {
@@ -277,4 +278,40 @@
     .auth-title {
         font-size: 30px
     }
+}
+
+
+.auth-help {
+    margin: 0 0 22px;
+    color: #64748b;
+    font-size: 14px;
+    line-height: 1.7;
+}
+
+.auth-success {
+    padding: 16px 18px;
+    margin: 0 0 20px;
+    border: 1px solid #bbf7d0;
+    border-radius: 12px;
+    background: #f0fdf4;
+    color: #166534;
+    font-size: 14px;
+    line-height: 1.7;
+}
+
+.auth-action-link {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-decoration: none;
+    margin-top: 16px;
+}
+
+.auth-forgot a {
+    color: inherit;
+    text-decoration: none;
+}
+
+.auth-forgot a:hover {
+    text-decoration: underline;
 }

@@ -309,16 +309,19 @@ export class AuthService {
             `${frontendUrl}/reset-password?token=${encodeURIComponent(token)}`;
 
         try {
-            console.log('[MAIL] Starting SMTP send');
+            console.log('[MAIL] Starting Resend API send');
 
             await this.mail.sendResetPasswordEmail(
                 user.email,
                 resetUrl,
             );
 
-            console.log('[MAIL] SMTP send completed');
+            console.log('[MAIL] Resend API request accepted');
         } catch (error) {
-            console.error('[MAIL] SMTP send failed:', error);
+            console.error(
+                '[MAIL] Email delivery request failed:',
+                error instanceof Error ? error.message : 'Unknown error',
+            );
         }
 
         return { message };

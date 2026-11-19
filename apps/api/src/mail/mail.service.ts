@@ -1,75 +1,88 @@
-import { Injectable, InternalServerErrorException, Logger } from "@nestjs/common";
+
+import {
+  Injectable,
+  InternalServerErrorException,
+  Logger,
+} from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import * as nodemailer from 'nodemailer';
+import { Resend } from 'resend';
 
 @Injectable()
 export class MailService {
-    private readonly logger = new Logger(MailService.name);
+  private readonly logger = new Logger(MailService.name);
+  private readonly resend: Resend;
 
-    constructor(private readonly config: ConfigService) { }
+  constructor(private readonly config: ConfigService) {
+    const apiKey =
+      this.config.getOrThrow<string>('RESEND_API_KEY');
 
-    async sendResetPasswordEmail(
-        to: string,
-        resetUrl: string,
-    ): Promise<void> {
-        const apiKey = this.config.getOrThrow<string>(
-            'BREVO_API_KEY',
-        );
+    this.resend = new Resend(apiKey);
+  }
 
-        const senderEmail = this.config.getOrThrow<string>(
-            'MAIL_FROM_EMAIL',
-        );
+  async sendResetPasswordEmail(
+    to: string,
+    resetUrl: string,
+  ): Promise<void> {
+    const from = this.config.getOrThrow<string>(
+      'RESEND_FROM',
+    );
 
-        const senderName = this.config.get<string>(
-            'MAIL_FROM_NAME',
-            '86Market',
-        );
+    const testEmail = this.config.getOrThrow<string>(
+      'RESEND_TEST_EMAIL',
+    );
 
-        const response = await fetch(
-            'https://api.brevo.com/v3/smtp/email',
-            {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'api-key': apiKey,
-                },
-                body: JSON.stringify({
-                    sender: {
-                        name: senderName,
-                        email: senderEmail,
-                    },
-                    to: [{ email: to }],
-                    subject: '86Market - Đặt lại mật khẩu',
-                    textContent: [
-                        'Bạn đã yêu cầu đặt lại mật khẩu 86Market.',
-                        '',
-                        `Đặt lại mật khẩu: ${resetUrl}`,
-                        '',
-                        'Liên kết có hiệu lực trong 15 phút.',
-                        'Nếu không yêu cầu, hãy bỏ qua email này.',
-                    ].join('\n'),
-                }),
-            },
-        );
+    // Chỉ áp dụng khi chưa xác minh domain riêng.
+    if (to.trim().toLowerCase() !== testEmail.trim().toLowerCase()) {
+      this.logger.warn(
+        'Recipient is not allowed in Resend testing mode',
+      );
 
-        if (!response.ok) {
-            const errorBody = await response.text();
-
-            this.logger.error(
-                `Brevo API failed: ${response.status} - ${errorBody}`,
-            );
-
-            throw new InternalServerErrorException(
-                'Không thể gửi email khôi phục mật khẩu',
-            );
-        }
-
-        const result = (await response.json()) as {
-            messageId?: string;
-        };
-
-        this.logger.log(
-            `Brevo API accepted email. Message ID: ${result.messageId ?? 'N/A'}`,
-        );
+      throw new InternalServerErrorException(
+        'Email service is in testing mode',
+      );
     }
+
+    try {
+      const { data, error } = await this.resend.emails.send({
+        from,
+        to: [to],
+        subject: '86Market - Đặt lại mật khẩu',
+        text: [
+          'Bạn đã yêu cầu đặt lại mật khẩu 86Market.',
+          '',
+          `Đặt lại mật khẩu: ${resetUrl}`,
+          '',
+          'Liên kết có hiệu lực trong 15 phút.',
+          'Nếu không yêu cầu, hãy bỏ qua email này.',
+        ].join('\n'),
+      });
+
+      if (error) {
+        this.logger.error(
+          `Resend error: ${error.name} - ${error.message}`,
+        );
+
+        throw new InternalServerErrorException(
+          'Không thể gửi email khôi phục mật khẩu',
+        );
+      }
+
+      this.logger.log(
+        `Resend accepted email. ID: ${data?.id ?? 'N/A'}`,
+      );
+    } catch (error) {
+      if (error instanceof InternalServerErrorException) {
+        throw error;
+      }
+
+      this.logger.error(
+        'Unexpected error while sending email',
+        error instanceof Error ? error.stack : undefined,
+      );
+
+      throw new InternalServerErrorException(
+        'Không thể gửi email khôi phục mật khẩu',
+      );
+    }
+  }
 }
