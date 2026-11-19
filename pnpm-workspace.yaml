@@ -1,5 +1,7 @@
 packages:
   - "apps/*"
+minimumReleaseAgeExclude:
+  - 'resend@6.39.0'
 allowBuilds:
   '@prisma/engines': true
   bcrypt: true

@@ -5,6 +5,7 @@ import { JwtModule } from '@nestjs/jwt';
 import { JwtAuthGuard } from './guards/jwt-auth.guard.js';
 import { RolesGuard } from './guards/roles.guard.js';
 import { MailModule } from '../mail/mail.module.js';
+import { AuthRateLimitService } from './rate-limit/auth-rate-limit.service.js';
 
 @Module({
   controllers: [AuthController],
@@ -12,6 +13,7 @@ import { MailModule } from '../mail/mail.module.js';
     AuthService,
     JwtAuthGuard,
     RolesGuard,
+    AuthRateLimitService,
   ],
   imports: [
     JwtModule.register({}),
