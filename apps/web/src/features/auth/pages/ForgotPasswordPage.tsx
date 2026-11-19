@@ -67,7 +67,7 @@ export default function ForgotPasswordPage() {
             ) : (
                 <form onSubmit={e => void submit(e)} noValidate>
                     <p className="auth-help">
-                        Nhập email đã đăng ký tài khoản 86Market.
+                        Nhập email đã đăng ký tài khoản 72Market.
                         Chúng tôi sẽ gửi hướng dẫn đặt lại mật khẩu.
                     </p>
 
