@@ -6,6 +6,8 @@ import { adminRoutes } from './AdminRoutes';
 import { publicRoutes } from './PublicRoutes';
 import ProtectedRoute from './ProtectedRoute';
 import ProfilePage from '../../features/customer/pages/ProfilePage';
+import { useEffect } from 'react';
+import { updatePageTitle } from '../utils/pageTitle';
 
 const router = createBrowserRouter([
     ...publicRoutes,
@@ -26,5 +28,15 @@ const router = createBrowserRouter([
 ]);
 
 export default function AppRouter() {
+    useEffect(() => {
+        updatePageTitle(router.state.location.pathname);
+
+        const unsubcribe = router.subscribe((state) => {
+            updatePageTitle(state.location.pathname);
+        });
+
+        return unsubcribe;
+    }, []);
+
     return <RouterProvider router={router} />
 }
