@@ -68,8 +68,9 @@ export class AuthService {
         return { accessToken, refreshToken };
     }
 
-    async register(dto: RegisterDto) {
+    async register(dto: RegisterDto, ip: string) {
         const email = dto.email.toLowerCase();
+
         const existing = await this.prisma.user.findUnique({
             where: { email },
         });
@@ -79,20 +80,30 @@ export class AuthService {
         }
 
         const password = await bcrypt.hash(dto.password, 12);
-        const user = await this.prisma.user.create({
-            data: {
-                email,
-                password,
-                name: dto.name,
-                role: 'CUSTOMER',
+        const user = await this.prisma.$transaction(
+            async (tx) => {
+                await this.rateLimit.consumeRegisterSlot(tx, ip);
+
+                return tx.user.create({
+                    data: {
+                        email,
+                        password,
+                        name: dto.name,
+                        role: 'CUSTOMER',
+                    },
+                    select: {
+                        id: true,
+                        email: true,
+                        name: true,
+                        role: true,
+                    },
+                });
             },
-            select: {
-                id: true,
-                email: true,
-                name: true,
-                role: true,
+            {
+                maxWait: 5000,
+                timeout: 10000,
             },
-        });
+        );
 
         const tokens = await this.issueToken(user);
         return { user, ...tokens };
@@ -326,48 +337,13 @@ export class AuthService {
         const message = 'Nếu email đã đăng ký, bạn sẽ nhận được hướng dẫn đặt lại mật khẩu';
         const normalizedEmail = email.trim().toLocaleLowerCase();
 
-        await this.rateLimit.check({
-            action: 'forgot',
-            scope: 'email',
-            value: normalizedEmail,
-        });
-
-        await this.rateLimit.check({
-            action: 'forgot',
-            scope: 'ip',
-            value: ip,
-        });
-
-
-        const ipResult = await this.rateLimit.recordViolation({
-            action: 'forgot',
-            scope: 'ip',
-            value: ip,
-        });
-
-        const emailResult = await this.rateLimit.recordViolation({
-            action: 'forgot',
-            scope: 'email',
-            value: normalizedEmail,
-        });
-
-        if (ipResult.locked || emailResult.locked) {
-            throw new HttpException(
-                {
-                    statusCode: HttpStatus.TOO_MANY_REQUESTS,
-                    message:
-                        'Bạn đã gửi quá nhiều yêu cầu. Vui lòng thử lại sau.',
-                    retryAfter: Math.max(
-                        ipResult.retryAfter,
-                        emailResult.retryAfter,
-                    ),
-                },
-                HttpStatus.TOO_MANY_REQUESTS,
-            );
-        }
+        await this.rateLimit.consumeForgotRequest(
+            normalizedEmail,
+            ip,
+        );
 
         const user = await this.prisma.user.findUnique({
-            where: { email: normalizedEmail },
+            where: { email: normalizedEmail }
         });
 
         if (!user || !user.isActive) {
@@ -378,29 +354,20 @@ export class AuthService {
         const tokenHash = this.hashToken(token);
         const now = new Date();
 
-        const recentToken = await this.prisma.passwordResetToken.findFirst({
-            where: {
-                userId: user.id,
-                createdAt: {
-                    gt: new Date(now.getTime() - 60_000),
+        await this.prisma.$transaction(async (tx) => {
+            await tx.passwordResetToken.deleteMany({
+                where: { userId: user.id },
+            });
+
+            await tx.passwordResetToken.create({
+                data: {
+                    userId: user.id,
+                    tokenHash,
+                    expiresAt: new Date(
+                        now.getTime() + 15 * 60_000,
+                    ),
                 },
-            },
-        });
-
-        if (recentToken) {
-            return { message };
-        }
-
-        await this.prisma.passwordResetToken.deleteMany({
-            where: { userId: user.id },
-        });
-
-        await this.prisma.passwordResetToken.create({
-            data: {
-                userId: user.id,
-                tokenHash,
-                expiresAt: new Date(now.getTime() + 15 * 60_000),
-            },
+            });
         });
 
         const frontendUrl = this.config
@@ -411,18 +378,16 @@ export class AuthService {
             `${frontendUrl}/reset-password?token=${encodeURIComponent(token)}`;
 
         try {
-            console.log('[MAIL] Starting Resend API send');
-
             await this.mail.sendResetPasswordEmail(
                 user.email,
                 resetUrl,
             );
-
-            console.log('[MAIL] Resend API request accepted');
         } catch (error) {
             console.error(
                 '[MAIL] Email delivery request failed:',
-                error instanceof Error ? error.message : 'Unknown error',
+                error instanceof Error
+                    ? error.message
+                    : 'Unknown error',
             );
         }
 

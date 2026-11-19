@@ -6,8 +6,9 @@ import {
 } from '@nestjs/common';
 import { createHash } from 'node:crypto';
 import { PrismaService } from '../../prisma/prisma.service.js';
+import type { Prisma } from '../../generated/prisma/client.js';
 
-type RateLimitAction = 'login' | 'forgot';
+type RateLimitAction = 'login' | 'forgot' | 'register';
 type RateLimitScope = 'email' | 'ip';
 
 type RateLimitKey = {
@@ -204,6 +205,295 @@ export class AuthRateLimitService {
         return outcome;
     }
 
+    async consumeRegisterSlot(
+        tx: Prisma.TransactionClient,
+        ip: string,
+    ): Promise<void> {
+        const key = this.makeKey({
+            action: 'register',
+            scope: 'ip',
+            value: ip,
+        });
+
+        await tx.$executeRaw`
+            SELECT pg_advisory_xact_lock(
+                hashtextextended(${key}, 0)
+            )
+        `;
+
+        const now = new Date();
+        const windowMs = 24 * 60 * 60 * 1000;
+        const maxAccounts = 5;
+
+        const current = await tx.authRateLimit.findUnique({
+            where: { key },
+        });
+
+        const windowStart = current?.createdAt ?? now;
+        const windowEnd = new Date(
+            windowStart.getTime() + windowMs,
+        );
+
+        const expired =
+            !current || now >= windowEnd;
+
+        const attempts = expired
+            ? 0
+            : current.attempts;
+
+        if (attempts >= maxAccounts) {
+            const retryAfter = Math.max(
+                1,
+                Math.ceil(
+                    (windowEnd.getTime() - now.getTime()) / 1000,
+                ),
+            );
+
+            throw new HttpException(
+                {
+                    statusCode: HttpStatus.TOO_MANY_REQUESTS,
+                    message:
+                        'Bạn đã đạt giới hạn 5 tài khoản đăng ký trong 24 giờ.',
+                    retryAfter,
+                },
+                HttpStatus.TOO_MANY_REQUESTS,
+            );
+        }
+
+        if (expired) {
+            await tx.authRateLimit.upsert({
+                where: { key },
+                create: {
+                    key,
+                    attempts: 1,
+                    lockLevel: 0,
+                    lockedUntil: null,
+                    lastAttempt: now,
+                    createdAt: now,
+                },
+                update: {
+                    attempts: 1,
+                    lockLevel: 0,
+                    lockedUntil: null,
+                    lastAttempt: now,
+                    createdAt: now,
+                },
+            });
+        } else {
+            await tx.authRateLimit.update({
+                where: { key },
+                data: {
+                    attempts: { increment: 1 },
+                    lastAttempt: now,
+                },
+            });
+        }
+    }
+
+
+    async consumeForgotRequest(
+        email: string,
+        ip: string,
+    ): Promise<void> {
+        const emailKey = this.makeKey({
+            action: 'forgot',
+            scope: 'email',
+            value: email,
+        });
+
+        const ipKey = this.makeKey({
+            action: 'forgot',
+            scope: 'ip',
+            value: ip,
+        });
+
+        const dayMs = 24 * 60 * 60 * 1000;
+        const cooldownMs = 60 * 1000;
+
+        const result = await this.prisma.$transaction(
+            async (tx) => {
+                // Khóa cả hai bộ đếm theo thứ tự cố định.
+                // Tránh request đồng thời vượt hạn mức.
+                for (const key of [emailKey, ipKey].sort()) {
+                    await tx.$executeRaw`
+                    SELECT pg_advisory_xact_lock(
+                        hashtextextended(${key}, 0)
+                    )
+                `;
+                }
+
+                const now = new Date();
+
+                const emailState =
+                    await tx.authRateLimit.findUnique({
+                        where: { key: emailKey },
+                    });
+
+                const ipState =
+                    await tx.authRateLimit.findUnique({
+                        where: { key: ipKey },
+                    });
+
+                const emailExpired =
+                    !emailState ||
+                    now.getTime() -
+                    emailState.createdAt.getTime() >= dayMs;
+
+                const ipExpired =
+                    !ipState ||
+                    now.getTime() -
+                    ipState.createdAt.getTime() >= dayMs;
+
+                const emailCount = emailExpired
+                    ? 0
+                    : emailState.attempts;
+
+                const ipCount = ipExpired
+                    ? 0
+                    : ipState.attempts;
+
+                let retryAfter = 0;
+                let code = '';
+                let message = '';
+
+                // Một email tối đa 5 yêu cầu / 24 giờ.
+                if (emailCount >= 5 && emailState) {
+                    const remaining =
+                        emailState.createdAt.getTime() +
+                        dayMs -
+                        now.getTime();
+
+                    retryAfter = Math.max(
+                        1,
+                        Math.ceil(remaining / 1000),
+                    );
+
+                    code = 'FORGOT_DAILY_EMAIL_LIMIT';
+                    message =
+                        'Bạn đã đạt giới hạn 5 yêu cầu đặt lại mật khẩu trong 24 giờ.';
+                }
+
+                // Một IP tối đa 20 yêu cầu / 24 giờ.
+                if (ipCount >= 20 && ipState) {
+                    const remaining =
+                        ipState.createdAt.getTime() +
+                        dayMs -
+                        now.getTime();
+
+                    const ipRetryAfter = Math.max(
+                        1,
+                        Math.ceil(remaining / 1000),
+                    );
+
+                    if (ipRetryAfter > retryAfter) {
+                        retryAfter = ipRetryAfter;
+                        code = 'FORGOT_DAILY_IP_LIMIT';
+                        message =
+                            'Có quá nhiều yêu cầu từ mạng của bạn. Vui lòng thử lại sau.';
+                    }
+                }
+
+                if (retryAfter === 0 && !emailExpired && emailState) {
+                    const remaining =
+                        emailState.lastAttempt.getTime() +
+                        cooldownMs -
+                        now.getTime();
+
+                    const cooldownRemaining = Math.max(
+                        retryAfter,
+                        Math.ceil(remaining / 1000),
+                    );
+
+                    if (cooldownRemaining > 0) {
+                        retryAfter = cooldownRemaining;
+                        code = 'FORGOT_COOLDOWN';
+                        message =
+                            'Vui lòng đợi 60 giây giữa các yêu cầu đặt lại mật khẩu.';
+                    }
+                }
+
+                if (retryAfter > 0) {
+                    return {
+                        retryAfter,
+                        code,
+                        message,
+                    };
+                }
+
+                await tx.authRateLimit.upsert({
+                    where: { key: emailKey },
+                    create: {
+                        key: emailKey,
+                        attempts: 1,
+                        lockLevel: 0,
+                        lockedUntil: null,
+                        lastAttempt: now,
+                        createdAt: now,
+                    },
+                    update: emailExpired
+                        ? {
+                            attempts: 1,
+                            lockLevel: 0,
+                            lockedUntil: null,
+                            lastAttempt: now,
+                            createdAt: now,
+                        }
+                        : {
+                            attempts: { increment: 1 },
+                            lastAttempt: now,
+                        },
+                });
+
+                await tx.authRateLimit.upsert({
+                    where: { key: ipKey },
+                    create: {
+                        key: ipKey,
+                        attempts: 1,
+                        lockLevel: 0,
+                        lockedUntil: null,
+                        lastAttempt: now,
+                        createdAt: now,
+                    },
+                    update: ipExpired
+                        ? {
+                            attempts: 1,
+                            lockLevel: 0,
+                            lockedUntil: null,
+                            lastAttempt: now,
+                            createdAt: now,
+                        }
+                        : {
+                            attempts: { increment: 1 },
+                            lastAttempt: now,
+                        },
+                });
+
+                return {
+                    retryAfter: 0,
+                    code: '',
+                    message: '',
+                };
+            },
+            {
+                maxWait: 5000,
+                timeout: 10000,
+            },
+        );
+
+        if (result.retryAfter > 0) {
+            throw new HttpException(
+                {
+                    statusCode: HttpStatus.TOO_MANY_REQUESTS,
+                    code: result.code,
+                    message: result.message,
+                    retryAfter: result.retryAfter,
+                },
+                HttpStatus.TOO_MANY_REQUESTS,
+            );
+        }
+    }
+
+
     async reset(input: RateLimitKey): Promise<void> {
         const key = this.makeKey(input);
 
@@ -219,4 +509,6 @@ export class AuthRateLimitService {
             });
         });
     }
+
+
 }

@@ -42,9 +42,11 @@ export class AuthController {
     @Post('register')
     async register(
         @Body() dto: RegisterDto,
-        @Res({ passthrough: true }) res: Response
+        @Req() req: Request,
+        @Res({ passthrough: true }) res: Response,
     ) {
-        const { refreshToken, ...result } = await this.auth.register(dto);
+        const ip = req.ip ?? req.socket.remoteAddress ?? 'unknown';
+        const { refreshToken, ...result } = await this.auth.register(dto, ip);
         res.cookie('refresh_token', refreshToken, this.cookieOptions());
         return result;
     }
