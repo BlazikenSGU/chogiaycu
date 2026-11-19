@@ -20,6 +20,8 @@ import { UserRole } from '../generated/prisma/enums.js';
 import { RolesGuard } from './guards/roles.guard.js';
 import { UpdateProfileDto } from './dto/update-profile.dto.js';
 import { ChangePasswordDto } from './dto/change-password.dto.js';
+import { ForgotPasswordDto } from './dto/forgot-password.dto.js';
+import { ResetPasswordDto } from './dto/reset-password.dto.js';
 
 @Controller('auth')
 export class AuthController {
@@ -150,4 +152,24 @@ export class AuthController {
 
         return result;
     }
+
+
+    @Post('forgot-password')
+    async forgotPassword(
+        @Body() dto: ForgotPasswordDto,
+    ) {
+        return this.auth.forgotPassword(dto.email);
+    }
+
+    @Post('reset-password')
+    async resetPassword(
+        @Body() dto: ResetPasswordDto,
+    ) {
+        return this.auth.resetPassword(
+            dto.token,
+            dto.newPassword,
+            dto.confirmPassword,
+        );
+    }
+
 }

@@ -23,7 +23,8 @@ model User {
   createdAt DateTime @default(now())
   updateAt  DateTime @updatedAt
 
-  refreshSessions RefreshSession[]
+  refreshSessions     RefreshSession[]
+  passwordResetTokens PasswordResetToken[]
 
   @@map("users")
 }
@@ -116,4 +117,18 @@ model ProductImage {
 
   @@index([productId])
   @@map("product_image")
+}
+
+model PasswordResetToken {
+  id        String    @id @default(uuid())
+  userId    String
+  tokenHash String    @unique
+  expiresAt DateTime
+  createdAt DateTime  @default(now())
+  usedAt    DateTime?
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([expiresAt])
+  @@map("password_reset_tokens")
 }

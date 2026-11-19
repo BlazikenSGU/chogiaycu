@@ -13,13 +13,15 @@ import * as bcrypt from 'bcrypt';
 import { createHash, randomBytes } from 'node:crypto';
 import { UpdateProfileDto } from './dto/update-profile.dto.js';
 import { ChangePasswordDto } from './dto/change-password.dto.js';
+import { MailService } from '../mail/mail.service.js';
 
 @Injectable()
 export class AuthService {
     constructor(
         private readonly prisma: PrismaService,
         private readonly jwt: JwtService,
-        private readonly config: ConfigService
+        private readonly config: ConfigService,
+        private readonly mail: MailService,
     ) { }
 
     private hashToken(token: string) {
@@ -257,4 +259,159 @@ export class AuthService {
             message: 'Đổi mật khẩu thành công. Vui lòng đăng nhập lại.',
         }
     }
+
+    async forgotPassword(email: string) {
+        const message = 'Nếu email đã đăng ký, bạn sẽ nhận được hướng dẫn đặt lại mật khẩu';
+        const normalizedEmail = email.trim().toLocaleLowerCase();
+
+        const user = await this.prisma.user.findUnique({
+            where: { email: normalizedEmail },
+        });
+
+        if (!user || !user.isActive) {
+            return { message };
+        }
+
+        const token = randomBytes(32).toString('hex');
+        const tokenHash = this.hashToken(token);
+        const now = new Date();
+
+        const recentToken = await this.prisma.passwordResetToken.findFirst({
+            where: {
+                userId: user.id,
+                createdAt: {
+                    gt: new Date(now.getTime() - 60_000),
+                },
+            },
+        });
+
+        if (recentToken) {
+            return { message };
+        }
+
+        await this.prisma.passwordResetToken.deleteMany({
+            where: { userId: user.id },
+        });
+
+        await this.prisma.passwordResetToken.create({
+            data: {
+                userId: user.id,
+                tokenHash,
+                expiresAt: new Date(now.getTime() + 15 * 60_000),
+            },
+        });
+
+        const frontendUrl = this.config
+            .getOrThrow<string>('FRONTEND_URL')
+            .replace(/\/+$/, '');
+
+        const resetUrl =
+            `${frontendUrl}/reset-password?token=${encodeURIComponent(token)}`;
+
+        try {
+            console.log('[MAIL] Starting SMTP send');
+
+            await this.mail.sendResetPasswordEmail(
+                user.email,
+                resetUrl,
+            );
+
+            console.log('[MAIL] SMTP send completed');
+        } catch (error) {
+            console.error('[MAIL] SMTP send failed:', error);
+        }
+
+        return { message };
+
+    }
+
+    async resetPassword(
+        token: string,
+        newPassword: string,
+        confirmPassword: string,
+    ) {
+        if (newPassword !== confirmPassword) {
+            throw new BadRequestException(
+                'Xác nhận mật khẩu không khớp',
+            );
+        }
+
+        if (
+            newPassword.length < 8 ||
+            newPassword.length > 72 ||
+            Buffer.byteLength(newPassword, 'utf8') > 72
+        ) {
+            throw new BadRequestException(
+                'Mật khẩu phải từ 8 đến 72 ký tự và không quá 72 byte UTF-8',
+            );
+        }
+
+        if (!/^[a-f0-9]{64}$/i.test(token)) {
+            throw new BadRequestException(
+                'Link đặt lại mật khẩu không hợp lệ',
+            );
+        }
+
+        const tokenHash = this.hashToken(token);
+        const hashedPassword = await bcrypt.hash(newPassword, 12);
+        const now = new Date();
+
+        await this.prisma.$transaction(async (tx) => {
+            const resetToken = await tx.passwordResetToken.findUnique({
+                where: { tokenHash },
+                include: { user: true },
+            });
+
+            if (
+                !resetToken ||
+                resetToken.usedAt ||
+                resetToken.expiresAt <= now ||
+                !resetToken.user.isActive
+            ) {
+                throw new BadRequestException(
+                    'Link đặt lại mật khẩu không hợp lệ hoặc đã hết hạn',
+                );
+            }
+
+            const claimed = await tx.passwordResetToken.updateMany({
+                where: {
+                    id: resetToken.id,
+                    usedAt: null,
+                    expiresAt: { gt: now },
+                },
+                data: { usedAt: now },
+            });
+
+            if (claimed.count !== 1) {
+                throw new BadRequestException(
+                    'Link đặt lại mật khẩu đã được sử dụng',
+                );
+            }
+
+            await tx.user.update({
+                where: { id: resetToken.userId },
+                data: { password: hashedPassword },
+            });
+
+            await tx.refreshSession.updateMany({
+                where: {
+                    userId: resetToken.userId,
+                    revokedAt: null,
+                },
+                data: { revokedAt: now },
+            });
+
+            await tx.passwordResetToken.deleteMany({
+                where: {
+                    userId: resetToken.userId,
+                    id: { not: resetToken.id },
+                },
+            });
+        });
+
+        return {
+            message: 'Đặt lại mật khẩu thành công. Vui lòng đăng nhập lại.',
+        };
+    }
+
 }

@@ -4,6 +4,7 @@ import { AuthService } from './auth.service.js';
 import { JwtModule } from '@nestjs/jwt';
 import { JwtAuthGuard } from './guards/jwt-auth.guard.js';
 import { RolesGuard } from './guards/roles.guard.js';
+import { MailModule } from '../mail/mail.module.js';
 
 @Module({
   controllers: [AuthController],
@@ -12,7 +13,10 @@ import { RolesGuard } from './guards/roles.guard.js';
     JwtAuthGuard,
     RolesGuard,
   ],
-  imports: [JwtModule.register({})],
+  imports: [
+    JwtModule.register({}),
+    MailModule,
+  ],
   exports: [
     AuthService,
     JwtAuthGuard,
