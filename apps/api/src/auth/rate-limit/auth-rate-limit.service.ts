@@ -23,14 +23,17 @@ type RateLimitState = {
     lastAttempt: Date;
 };
 
+type ViolationResult = {
+    locked: boolean;
+    retryAfter: number;
+};
+
 @Injectable()
 export class AuthRateLimitService {
+    private readonly loginLockMinutes = [5, 30, 60, 360];
+    constructor(private readonly prisma: PrismaService) { }
     private readonly maxAttempts = 5;
     private readonly resetAfterMs = 24 * 60 * 60 * 1000;
-
-    private readonly lockMinutes = [5, 15, 60, 360];
-
-    constructor(private readonly prisma: PrismaService) { }
 
     private makeKey(input: RateLimitKey): string {
         const normalized = input.value.trim().toLowerCase();
@@ -42,13 +45,31 @@ export class AuthRateLimitService {
         return `${input.action}:${input.scope}:${hash}`;
     }
 
-    private getLockDuration(level: number): number {
+    private getPolicy(input: RateLimitKey) {
+        if (input.action === 'forgot') {
+            return {
+                maxAttempts: input.scope === 'ip' ? 20 : 5,
+                resetAfterMs: 60 * 60_000,
+            };
+        }
+
+        return {
+            maxAttempts: input.scope === 'ip' ? 20 : 5,
+            resetAfterMs: 24 * 60 * 60_000,
+        };
+    }
+
+    private getLockDuration(input: RateLimitKey, level: number): number {
+        if (input.action === 'forgot') {
+            return 60 * 60_000;
+        }
+
         const index = Math.min(
             Math.max(level - 1, 0),
-            this.lockMinutes.length - 1,
+            this.loginLockMinutes.length - 1,
         );
 
-        return this.lockMinutes[index] * 60_000;
+        return this.loginLockMinutes[index] * 60_000;
     }
 
     private throwIfLocked(
@@ -62,18 +83,13 @@ export class AuthRateLimitService {
 
         if (remainingMs <= 0) return;
 
-        const seconds = Math.ceil(remainingMs / 1000);
-
         throw new HttpException(
             {
                 statusCode: HttpStatus.TOO_MANY_REQUESTS,
                 message: 'Bạn đã thử quá nhiều lần. Vui lòng thử lại sau.',
-                retryAfter: seconds,
+                retryAfter: Math.ceil(remainingMs / 1000),
             },
             HttpStatus.TOO_MANY_REQUESTS,
-            {
-                cause: 'AUTH_RATE_LIMITED',
-            },
         );
     }
 
@@ -91,20 +107,19 @@ export class AuthRateLimitService {
         const key = this.makeKey(input);
 
         const state = await this.prisma.authRateLimit.findUnique({
-            where: { key },
+            where: { key }
         });
 
         this.throwIfLocked(state, new Date());
     }
 
-    async recordViolation(input: RateLimitKey): Promise<void> {
+    async recordViolation(input: RateLimitKey): Promise<ViolationResult> {
         const key = this.makeKey(input);
+        const policy = this.getPolicy(input);
 
         const outcome = await this.prisma.$transaction(
             async (tx) => {
-                // Serialize operations on the same key,
-                // including the first insert.
-                await tx.$queryRaw`
+                await tx.$executeRaw`
           SELECT pg_advisory_xact_lock(
             hashtextextended(${key}, 0)
           )
@@ -116,28 +131,30 @@ export class AuthRateLimitService {
                     where: { key },
                 });
 
-                // Return a result instead of throwing inside
-                // the transaction, so updates can commit.
                 if (
                     current?.lockedUntil &&
                     current.lockedUntil > now
                 ) {
                     return {
-                        lockedUntil: current.lockedUntil,
+                        locked: true,
+                        retryAfter: Math.ceil(
+                            (current.lockedUntil.getTime() - now.getTime()) / 1000,
+                        )
                     };
                 }
 
                 const expired =
-                    current !== null &&
-                    this.isExpired(current, now);
+                    !current ||
+                    now.getTime() - current.lastAttempt.getTime() >=
+                    policy.resetAfterMs;
 
                 const attempts = expired
                     ? 1
-                    : (current?.attempts ?? 0) + 1;
+                    : current.attempts + 1;
 
                 const previousLevel = expired
                     ? 0
-                    : (current?.lockLevel ?? 0);
+                    : current.lockLevel;
 
                 const shouldLock =
                     attempts >= this.maxAttempts;
@@ -149,7 +166,7 @@ export class AuthRateLimitService {
                 const lockedUntil = shouldLock
                     ? new Date(
                         now.getTime() +
-                        this.getLockDuration(lockLevel),
+                        this.getLockDuration(input, lockLevel),
                     )
                     : null;
 
@@ -170,32 +187,29 @@ export class AuthRateLimitService {
                     },
                 });
 
-                return { lockedUntil };
+                return {
+                    locked: shouldLock,
+                    retryAfter: lockedUntil
+                        ? Math.ceil(
+                            (lockedUntil.getTime() -
+                                now.getTime()) / 1000,
+                        )
+                        : 0,
+                };
             },
             {
                 maxWait: 5000,
                 timeout: 10000,
             },
         );
-
-        if (outcome.lockedUntil) {
-            this.throwIfLocked(
-                {
-                    attempts: 0,
-                    lockLevel: 0,
-                    lockedUntil: outcome.lockedUntil,
-                    lastAttempt: new Date(),
-                },
-                new Date(),
-            );
-        }
+        return outcome;
     }
 
     async reset(input: RateLimitKey): Promise<void> {
         const key = this.makeKey(input);
 
         await this.prisma.$transaction(async (tx) => {
-            await tx.$queryRaw`
+            await tx.$executeRaw`
         SELECT pg_advisory_xact_lock(
           hashtextextended(${key}, 0)
         )

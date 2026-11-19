@@ -52,9 +52,11 @@ export class AuthController {
     @Post('login')
     async login(
         @Body() dto: LoginDto,
+        @Req() req: Request,
         @Res({ passthrough: true }) res: Response
     ) {
-        const { refreshToken, ...result } = await this.auth.login(dto);
+        const ip = req.ip ?? req.socket.remoteAddress ?? 'unknown';
+        const { refreshToken, ...result } = await this.auth.login(dto, ip);
         res.cookie('refresh_token', refreshToken, this.cookieOptions());
         return result;
     }
@@ -157,8 +159,10 @@ export class AuthController {
     @Post('forgot-password')
     async forgotPassword(
         @Body() dto: ForgotPasswordDto,
+        @Req() req: Request,
     ) {
-        return this.auth.forgotPassword(dto.email);
+        const ip = req.ip ?? req.socket.remoteAddress ?? 'unknown';
+        return this.auth.forgotPassword(dto.email, ip);
     }
 
     @Post('reset-password')

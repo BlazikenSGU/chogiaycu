@@ -3,6 +3,8 @@ import {
     UnauthorizedException,
     ConflictException,
     BadRequestException,
+    HttpException,
+    HttpStatus,
 } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
@@ -14,6 +16,12 @@ import { createHash, randomBytes } from 'node:crypto';
 import { UpdateProfileDto } from './dto/update-profile.dto.js';
 import { ChangePasswordDto } from './dto/change-password.dto.js';
 import { MailService } from '../mail/mail.service.js';
+import { AuthRateLimitService } from './rate-limit/auth-rate-limit.service.js';
+
+type ViolationResult = {
+    locked: boolean;
+    retryAfter: number;
+}
 
 @Injectable()
 export class AuthService {
@@ -22,6 +30,7 @@ export class AuthService {
         private readonly jwt: JwtService,
         private readonly config: ConfigService,
         private readonly mail: MailService,
+        private readonly rateLimit: AuthRateLimitService,
     ) { }
 
     private hashToken(token: string) {
@@ -89,14 +98,67 @@ export class AuthService {
         return { user, ...tokens };
     }
 
-    async login(dto: LoginDto) {
-        const user = await this.prisma.user.findUnique({
-            where: { email: dto.email.trim().toLowerCase() },
+    async login(dto: LoginDto, ip: string) {
+        const email = dto.email.trim().toLowerCase();
+
+        await this.rateLimit.check({
+            action: 'login',
+            scope: 'email',
+            value: email
         });
 
-        if (!user || !user.isActive || !(await bcrypt.compare(dto.password, user.password))) {
-            throw new UnauthorizedException('Email hoặc mật khẩu không đúng');
+        await this.rateLimit.check({
+            action: 'login',
+            scope: 'ip',
+            value: ip
+        });
+
+        const user = await this.prisma.user.findUnique({
+            where: { email },
+        });
+
+        const isValid = user && user.isActive && (await bcrypt.compare(dto.password, user.password));
+
+
+        if (!isValid) {
+            const ipResult = await this.rateLimit.recordViolation({
+                action: 'login',
+                scope: 'ip',
+                value: ip,
+            });
+
+            const emailResult = await this.rateLimit.recordViolation({
+                action: 'login',
+                scope: 'email',
+                value: email,
+            });
+
+            if (ipResult.locked || emailResult.locked) {
+                throw new HttpException(
+                    {
+                        statusCode: HttpStatus.TOO_MANY_REQUESTS,
+                        message:
+                            'Bạn đã thử quá nhiều lần. Vui lòng thử lại sau.',
+                        retryAfter: Math.max(
+                            ipResult.retryAfter,
+                            emailResult.retryAfter,
+                        ),
+                    },
+                    HttpStatus.TOO_MANY_REQUESTS,
+                );
+            }
+
+            throw new UnauthorizedException(
+                'Email hoặc mật khẩu không đúng',
+            );
         }
+
+
+        await this.rateLimit.reset({
+            action: 'login',
+            scope: 'email',
+            value: email,
+        });
 
         const tokens = await this.issueToken(user);
 
@@ -260,9 +322,49 @@ export class AuthService {
         }
     }
 
-    async forgotPassword(email: string) {
+    async forgotPassword(email: string, ip: string) {
         const message = 'Nếu email đã đăng ký, bạn sẽ nhận được hướng dẫn đặt lại mật khẩu';
         const normalizedEmail = email.trim().toLocaleLowerCase();
+
+        await this.rateLimit.check({
+            action: 'forgot',
+            scope: 'email',
+            value: normalizedEmail,
+        });
+
+        await this.rateLimit.check({
+            action: 'forgot',
+            scope: 'ip',
+            value: ip,
+        });
+
+
+        const ipResult = await this.rateLimit.recordViolation({
+            action: 'forgot',
+            scope: 'ip',
+            value: ip,
+        });
+
+        const emailResult = await this.rateLimit.recordViolation({
+            action: 'forgot',
+            scope: 'email',
+            value: normalizedEmail,
+        });
+
+        if (ipResult.locked || emailResult.locked) {
+            throw new HttpException(
+                {
+                    statusCode: HttpStatus.TOO_MANY_REQUESTS,
+                    message:
+                        'Bạn đã gửi quá nhiều yêu cầu. Vui lòng thử lại sau.',
+                    retryAfter: Math.max(
+                        ipResult.retryAfter,
+                        emailResult.retryAfter,
+                    ),
+                },
+                HttpStatus.TOO_MANY_REQUESTS,
+            );
+        }
 
         const user = await this.prisma.user.findUnique({
             where: { email: normalizedEmail },
