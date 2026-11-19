@@ -1,11 +1,18 @@
 
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import {
-  Search, SlidersHorizontal, Heart, Bell,
+  Search,
+  SlidersHorizontal,
+  Heart,
+  Bell,
   ShoppingBag,
-  Home, UserRound, Package, Menu,
+  Home,
+  UserRound,
+  Package,
+  Menu,
+  LogOut,
 } from 'lucide-react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 // import api from '../../../lib/api';
 // import type {
 //   Product,
@@ -31,8 +38,52 @@ export default function HomePage() {
   const [search, setSearch] = useState('');
   const [brand, setBrand] = useState('Tất cả');
 
-  const { user, status, isAuthenticated } = useAuth();
+  const { user, status, isAuthenticated, logout } = useAuth();
   const displayName = user?.name?.trim() || user?.email || 'Khách';
+
+  const navigate = useNavigate();
+  const [userMenuOpen, setUserMenuOpen] = useState(false);
+  const [loggingOut, setLoggingOut] = useState(false);
+  const userMenuRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!userMenuOpen) return;
+
+    function handleOutsideClick(event: PointerEvent) {
+      if (
+        userMenuRef.current && !userMenuRef.current.contains(event.target as Node)) {
+        setUserMenuOpen(false);
+      }
+    }
+
+    function handleEscape(event: KeyboardEvent) {
+      if (event.key === 'Escape') {
+        setUserMenuOpen(false);
+      }
+    }
+
+    document.addEventListener('pointerdown', handleOutsideClick);
+    document.addEventListener('keydown', handleEscape);
+
+    return () => {
+      document.removeEventListener('pointerdown', handleOutsideClick);
+      document.removeEventListener('keydown', handleEscape);
+    };
+  }, [userMenuOpen]);
+
+  async function handleLogout() {
+    if (loggingOut) return;
+
+    setLoggingOut(true);
+    setUserMenuOpen(false);
+
+    try {
+      await logout();
+      navigate('/login', { replace: true });
+    } finally {
+      setLoggingOut(false);
+    }
+  }
 
   // useEffect(() => {
   //   let active = true;
@@ -75,19 +126,81 @@ export default function HomePage() {
         {/* Welcome */}
         <div className="mb-7 flex items-center justify-between gap-4">
           <div className="flex min-w-0 items-center gap-3">
+
             {isAuthenticated ? (
-              <Link
-                to="/profile"
-                aria-label="Xem hồ sơ cá nhân"
-                className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-neutral-100"
-              >
-                <UserRound size={23} />
-              </Link>
+              <div className="relative shrink-0" ref={userMenuRef}>
+                <button
+                  type="button"
+                  aria-label="Mở menu tài khoản"
+                  aria-haspopup="menu"
+                  aria-expanded={userMenuOpen}
+                  onClick={() => setUserMenuOpen((prev) => !prev)}
+                  className={`flex h-12 w-12 cursor-pointer items-center justify-center rounded-full transition-colors
+        ${userMenuOpen
+                      ? 'bg-neutral-200'
+                      : 'bg-neutral-100 hover:bg-neutral-200'
+                    }`}
+                >
+                  <UserRound size={23} />
+                </button>
+
+                {userMenuOpen && (
+                  <div
+                    role="menu"
+                    aria-label="Menu tài khoản"
+                    className="absolute left-0 top-full z-50 mt-3
+          w-60 overflow-hidden rounded-2xl
+          border border-neutral-100 bg-white p-2
+          shadow-[0_12px_35px_rgba(0,0,0,0.12)]"
+                  >
+                    <div className="border-b border-neutral-100 px-3 py-3">
+                      <p className="truncate text-sm font-semibold">
+                        {displayName}
+                      </p>
+                      <p className="truncate text-xs text-neutral-500">
+                        {user?.email}
+                      </p>
+                    </div>
+
+                    <Link
+                      to="/profile"
+                      role="menuitem"
+                      onClick={() => setUserMenuOpen(false)}
+                      className="mt-1 flex items-center gap-3 rounded-xl
+            px-3 py-3 text-sm font-medium
+            hover:bg-neutral-100"
+                    >
+                      <UserRound size={18} />
+                      Thông tin cá nhân
+                    </Link>
+
+                    <div className="my-1 border-t border-neutral-100" />
+
+                    <button
+                      type="button"
+                      role="menuitem"
+                      disabled={loggingOut}
+                      onClick={() => void handleLogout()}
+                      className="flex w-full items-center gap-3 rounded-xl
+            px-3 py-3 text-left text-sm font-medium
+            text-red-600 hover:bg-red-50
+            disabled:opacity-50"
+                    >
+                      <LogOut size={18} />
+                      {loggingOut ? 'Đang đăng xuất...' : 'Đăng xuất'}
+                    </button>
+                  </div>
+                )}
+              </div>
             ) : (
-              <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-neutral-100">
+              <div
+                className="flex h-12 w-12 shrink-0 items-center
+      justify-center rounded-full bg-neutral-100"
+              >
                 <UserRound size={23} />
               </div>
             )}
+
 
             <div className="min-w-0">
               <p className="text-xs text-neutral-500">
@@ -127,7 +240,7 @@ export default function HomePage() {
               <>
                 <Link
                   to="/login"
-                  className="text-sm font-semibold text-neutral-800 hover:text-black"
+                  className="rounded-full px-5 py-2.5 text-sm font-semibold text-black border border-black bg-white hover:bg-neutral-100"
                 >
                   Đăng nhập
                 </Link>
