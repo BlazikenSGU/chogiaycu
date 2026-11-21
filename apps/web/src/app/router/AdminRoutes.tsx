@@ -5,6 +5,8 @@ import ProductCreatePage from '../../features/products/pages/ProductCreatePage';
 import ProductEditPage from '../../features/products/pages/ProductEditPage';
 import ProtectedRoute from './ProtectedRoute';
 
+import BrandListPage from "../../features/brands/pages/BrandListPage";
+
 export const adminRoutes: RouteObject[] = [
     {
         element: <ProtectedRoute adminOnly />,
@@ -28,6 +30,10 @@ export const adminRoutes: RouteObject[] = [
                     {
                         path: 'products/:id/edit',
                         element: <ProductEditPage />,
+                    },
+                    {
+                        path: 'brands',
+                        element: <BrandListPage />,
                     },
                 ],
             }
