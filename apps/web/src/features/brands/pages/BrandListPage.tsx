@@ -22,6 +22,9 @@ export default function BrandListPage() {
   const [error, setError] = useState('');
   const [createModalOpen, setCreateModalOpen] = useState<boolean>(false);
   const [editingBrand, setEditingBrand] = useState<Brand | null>(null);
+  const [deletingBrand, setDeletingBrand] = useState<Brand | null>(null);
+  const [deleting, setDeleting] = useState(false);
+  const [deleteError, setDeleteError] = useState('');
 
   async function loadBrands() {
     try {
@@ -58,9 +61,28 @@ export default function BrandListPage() {
       timeZone: 'Asia/Ho_Chi_Minh',
     }).format(new Date(date));
 
+  async function handleDeleteBrand() {
+    if (!deletingBrand || deleting) return;
+
+    try {
+      setDeleting(true);
+      setDeleteError('');
+
+      await brandsApi.remove(deletingBrand.id);
+
+      setBrands((previous) =>
+        previous.filter((brand) => brand.id !== deletingBrand.id)
+      );
+
+      setDeletingBrand(null);
+    } catch (err) {
+      setDeleteError(getApiErrorMessage(err));
+    } finally {
+      setDeleting(false);
+    }
+  }
+
   return (
-
-
     <div className="space-y-6">
       <BrandFormModal
         open={createModalOpen}
@@ -244,9 +266,12 @@ export default function BrandListPage() {
 
                         <button
                           type="button"
-                          disabled
-                          title="Sẽ kích hoạt ở bước xóa"
-                          className="rounded-lg border border-gray-200 p-2 text-gray-400 disabled:cursor-not-allowed"
+                          onClick={() => {
+                            setDeletingBrand(brand);
+                            setDeleteError('');
+                          }}
+                          title={`Xóa ${brand.name}`}
+                          className="rounded-lg border border-gray-200 p-2 text-gray-500 transition hover:border-red-300 hover:bg-red-50 hover:text-red-600"
                         >
                           <Trash2 size={16} />
                         </button>
@@ -267,6 +292,88 @@ export default function BrandListPage() {
           </div>
         )}
       </section>
+
+      {/* Delete Brand Confirmation Modal */}
+      {deletingBrand && (
+        <div className="fixed inset-0 z-[110] flex items-center justify-center bg-black/60 p-4">
+          <div
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="delete-brand-title"
+            className="w-full max-w-md overflow-hidden rounded-2xl bg-white shadow-2xl"
+          >
+            {/* Header */}
+            <div className="border-b border-gray-100 px-6 py-5">
+              <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-xl bg-red-50 text-red-600">
+                <Trash2 size={24} />
+              </div>
+
+              <h2
+                id="delete-brand-title"
+                className="text-lg font-semibold text-gray-900"
+              >
+                Xóa thương hiệu?
+              </h2>
+
+              <p className="mt-2 text-sm leading-6 text-gray-500">
+                Bạn có chắc chắn muốn xóa thương hiệu{' '}
+                <strong className="font-semibold text-gray-900">
+                  {deletingBrand.name}
+                </strong>
+                ?
+              </p>
+
+              <p className="mt-2 text-xs text-red-600">
+                Hành động này không thể hoàn tác.
+              </p>
+            </div>
+
+            {/* Error */}
+            {deleteError && (
+              <div
+                role="alert"
+                className="mx-6 mt-4 rounded-xl border border-red-200 bg-red-50 p-3 text-sm text-red-600"
+              >
+                {deleteError}
+              </div>
+            )}
+
+            {/* Footer */}
+            <div className="flex justify-end gap-3 bg-gray-50 px-6 py-4">
+              <button
+                type="button"
+                disabled={deleting}
+                onClick={() => {
+                  setDeletingBrand(null);
+                  setDeleteError('');
+                }}
+                className="rounded-xl border border-gray-200 bg-white px-5 py-2.5 text-sm font-medium hover:bg-gray-100 disabled:opacity-50"
+              >
+                Hủy
+              </button>
+
+              <button
+                type="button"
+                disabled={deleting}
+                onClick={() => void handleDeleteBrand()}
+                className="flex items-center gap-2 rounded-xl bg-red-600 px-5 py-2.5 text-sm font-medium text-white transition hover:bg-red-700 disabled:opacity-50"
+              >
+                {deleting ? (
+                  <>
+                    <RefreshCw size={16} className="animate-spin" />
+                    Đang xóa...
+                  </>
+                ) : (
+                  <>
+                    <Trash2 size={16} />
+                    Xóa thương hiệu
+                  </>
+                )}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
