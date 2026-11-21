@@ -8,6 +8,9 @@ const pageTitles: Record<string, string> = {
     '/admin': 'Quản lý sản phẩm',
     '/admin/products': 'Quản lý sản phẩm',
     '/admin/products/new': 'Thêm sản phẩm',
+
+    '/admin/brands': 'Quản lý thương hiệu',
+    '/admin/brands/new': 'Thêm thương hiệu',
 };
 
 export function getPageTitle(pathname: string): string {
