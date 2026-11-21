@@ -23,6 +23,7 @@ interface BrandFormModalProps {
   open: boolean;
   onClose: () => void;
   onSuccess: (brand: Brand) => void;
+  brand?: Brand | null;
 }
 
 const MAX_FILE_SIZE = 2 * 1024 * 1024;
@@ -48,6 +49,7 @@ export default function BrandFormModal({
   open,
   onClose,
   onSuccess,
+  brand = null,
 }: BrandFormModalProps) {
   const [name, setName] = useState('');
   const [slug, setSlug] = useState('');
@@ -61,15 +63,21 @@ export default function BrandFormModal({
 
   const fileInputRef = useRef<HTMLInputElement>(null);
 
+  const isEditing = Boolean(brand);
+
   useEffect(() => {
     if (!open) return;
 
-    setName('');
-    setSlug('');
-    setSlugEdited(false);
+    setName(brand?.name ?? '');
+    setSlug(brand?.slug ?? '');
+    setSlugEdited(Boolean(brand));
     updatePreview(null);
     setError('');
-  }, [open]);
+
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
+    }
+  }, [open, brand]);
 
   const previewObjectUrlRef = useRef<string | null>(null);
 
@@ -174,13 +182,15 @@ export default function BrandFormModal({
       }
 
       // Lưu thương hiệu vào PostgreSQL.
-      const brand = await brandsApi.create({
+      const payload = {
         name: cleanName,
         slug: cleanSlug,
         ...(logoUrl && { logoUrl }),
-      });
+      };
 
-      onSuccess(brand);
+      const saveBrand = brand ? await brandsApi.update(brand.id, payload) : await brandsApi.create(payload);
+
+      onSuccess(saveBrand);
       onClose();
     } catch (err) {
       setError(getApiErrorMessage(err));
@@ -209,10 +219,12 @@ export default function BrandFormModal({
                 id="brand-modal-title"
                 className="text-lg font-semibold"
               >
-                Thêm thương hiệu
+                {isEditing ? 'Chỉnh sửa thương hiệu' : 'Thêm thương hiệu'}
               </h2>
               <p className="text-xs text-gray-500">
-                Tạo thương hiệu mới cho cửa hàng
+                {isEditing
+                  ? 'Cập nhật thông tin thương hiệu'
+                  : 'Tạo thương hiệu mới cho cửa hàng'}
               </p>
             </div>
           </div>
@@ -301,7 +313,7 @@ export default function BrandFormModal({
                 id="brand-logo-upload"
               />
 
-              {!file ? (
+              {!file && !brand?.logoUrl ? (
                 <button
                   type="button"
                   disabled={saving}
@@ -326,14 +338,18 @@ export default function BrandFormModal({
                 <div className="rounded-xl border border-gray-200 bg-gray-50 p-4">
                   <div className="flex h-36 items-center justify-center rounded-lg bg-white p-3">
                     <img
-                      src={previewUrl}
-                      alt="Logo xem trước"
+                      src={file ? previewUrl : brand?.logoUrl || '/images/image-not-available.png'}
+                      alt="Logo thương hiệu"
                       className="max-h-full max-w-full object-contain"
+                      onError={(event) => {
+                        event.currentTarget.onerror = null;
+                        event.currentTarget.src = '/images/image-not-available.png';
+                      }}
                     />
                   </div>
 
                   <p className="mt-3 truncate text-center text-xs text-gray-500">
-                    {file.name}
+                    {file ? file.name : 'Logo hiện tại'}
                   </p>
 
                   <div className="mt-3 flex justify-center gap-2">
@@ -348,16 +364,17 @@ export default function BrandFormModal({
                       <ImagePlus size={15} />
                       Đổi ảnh
                     </button>
-
-                    <button
-                      type="button"
-                      disabled={saving}
-                      onClick={removeFile}
-                      className="flex items-center gap-2 rounded-lg border border-gray-200 bg-white px-3 py-2 text-xs text-red-600 hover:bg-red-50 disabled:opacity-50"
-                    >
-                      <Trash2 size={15} />
-                      Xóa ảnh
-                    </button>
+                    {file && (
+                      <button
+                        type="button"
+                        disabled={saving}
+                        onClick={removeFile}
+                        className="flex items-center gap-2 rounded-lg border border-gray-200 bg-white px-3 py-2 text-xs text-red-600 hover:bg-red-50 disabled:opacity-50"
+                      >
+                        <Trash2 size={15} />
+                        Xóa ảnh
+                      </button>
+                    )}
                   </div>
                 </div>
               )}
@@ -389,7 +406,9 @@ export default function BrandFormModal({
 
               {saving
                 ? 'Đang lưu...'
-                : 'Tạo thương hiệu'}
+                : isEditing
+                  ? 'Lưu thay đổi'
+                  : 'Tạo thương hiệu'}
             </button>
           </div>
         </form>

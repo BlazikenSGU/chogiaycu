@@ -6,7 +6,6 @@ import {
   Plus,
   Pencil,
   Trash2,
-  ImageOff,
   RefreshCw,
 } from 'lucide-react';
 
@@ -14,6 +13,7 @@ import { brandsApi } from '../api/brand.api';
 import type { Brand } from '../types/brand.types';
 import { getApiErrorMessage } from '../../../lib/api-error';
 import BrandFormModal from '../components/BrandFormModal';
+import BrandLogo from '../components/BrandLogo';
 
 export default function BrandListPage() {
   const [brands, setBrands] = useState<Brand[]>([]);
@@ -21,6 +21,7 @@ export default function BrandListPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [createModalOpen, setCreateModalOpen] = useState<boolean>(false);
+  const [editingBrand, setEditingBrand] = useState<Brand | null>(null);
 
   async function loadBrands() {
     try {
@@ -72,6 +73,22 @@ export default function BrandListPage() {
           );
         }}
       />
+
+      <BrandFormModal
+        open={editingBrand !== null}
+        brand={editingBrand}
+        onClose={() => setEditingBrand(null)}
+        onSuccess={(updatedBrand) => {
+          setBrands((previous) =>
+            previous
+              .map((brand) =>
+                brand.id === updatedBrand.id ? updatedBrand : brand
+              )
+              .sort((a, b) => a.name.localeCompare(b.name))
+          );
+        }}
+      />
+
       {/* Page header */}
       <div className="flex flex-wrap items-center justify-between gap-4">
         <div>
@@ -193,15 +210,11 @@ export default function BrandListPage() {
                     <td className="px-6 py-4">
                       <div className="flex items-center gap-3">
                         <div className="flex h-12 w-12 shrink-0 items-center justify-center overflow-hidden rounded-xl border border-gray-200 bg-white">
-                          {brand.logoUrl ? (
-                            <img
-                              src={brand.logoUrl}
-                              alt={brand.name}
-                              className="h-full w-full object-contain p-1"
-                            />
-                          ) : (
-                            <ImageOff size={20} className="text-gray-300" />
-                          )}
+                          <BrandLogo
+                            src={brand.logoUrl}
+                            alt={brand.name}
+                            className="h-10 w-10 rounded-lg object-contain"
+                          />
                         </div>
                         <span className="font-semibold text-gray-900">
                           {brand.name}
@@ -221,9 +234,10 @@ export default function BrandListPage() {
                       <div className="flex justify-end gap-2">
                         <button
                           type="button"
-                          disabled
-                          title="Sẽ kích hoạt ở bước chỉnh sửa"
-                          className="rounded-lg border border-gray-200 p-2 text-gray-400 disabled:cursor-not-allowed"
+                          onClick={() => setEditingBrand(brand)}
+                          title={`Chỉnh sửa ${brand.name}`}
+                          aria-label={`Chỉnh sửa ${brand.name}`}
+                          className="rounded-lg border border-gray-200 p-2 text-gray-600 transition hover:border-black hover:bg-gray-100 hover:text-black"
                         >
                           <Pencil size={16} />
                         </button>
