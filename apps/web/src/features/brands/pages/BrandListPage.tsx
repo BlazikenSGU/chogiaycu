@@ -1,7 +1,6 @@
 
 import { useEffect, useMemo, useState } from 'react';
 import {
-  Tags,
   Search,
   Plus,
   Pencil,
@@ -136,7 +135,7 @@ export default function BrandListPage() {
       </div>
 
       {/* Statistics */}
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+      {/* <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
         <div className="rounded-2xl border border-gray-200 bg-white p-5">
           <div className="mb-4 flex h-10 w-10 items-center justify-center rounded-xl bg-gray-100">
             <Tags size={20} />
@@ -160,7 +159,7 @@ export default function BrandListPage() {
             {filteredBrands.length}
           </p>
         </div>
-      </div>
+      </div> */}
 
       {/* Brand table */}
       <section className="overflow-hidden rounded-2xl border border-gray-200 bg-white">

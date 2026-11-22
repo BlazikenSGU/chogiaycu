@@ -1,4 +1,4 @@
-import { Injectable, BadRequestException, ConflictException, NotFoundException } from '@nestjs/common';
+import { Injectable, BadRequestException, ConflictException, NotFoundException, BadGatewayException, Logger } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service.js';
 import { Prisma } from '../generated/prisma/client.js';
 import { ProductStatus } from '../generated/prisma/enums.js';
@@ -9,12 +9,17 @@ import {
     QueryProductDto,
 } from './dto/query-product.dto.js';
 import { SortOrder } from '../generated/prisma/internal/prismaNamespace.js';
+import { randomUUID } from 'node:crypto';
+import { ImageKitStorageService } from '../uploads/imagekit-storage.service.js';
 
 @Injectable()
 export class ProductsService {
     constructor(
-        private readonly prisma: PrismaService
+        private readonly prisma: PrismaService,
+        private readonly imageKitStorage: ImageKitStorageService,
     ) { }
+
+    private readonly logger = new Logger(ProductsService.name);
 
     private readonly includeRelations = {
         brand: true,
@@ -110,6 +115,143 @@ export class ProductsService {
             this.handlePrismaError(error);
         }
     }
+
+
+    async createWithImages(
+        dto: CreateProductDto,
+        files: Express.Multer.File[],
+    ) {
+        // 1. Validate trước khi upload.
+        await this.validateRelations(dto.brandId, dto.categoryId);
+
+        if (files.length > 6) {
+            throw new BadRequestException(
+                'Mỗi sản phẩm chỉ được tối đa 6 ảnh',
+            );
+        }
+
+        for (const file of files) {
+            this.imageKitStorage.validateImage(file);
+        }
+
+        // 2. Kiểm tra slug trước để tránh upload không cần thiết.
+        const existing = await this.prisma.product.findUnique({
+            where: { slug: dto.slug },
+            select: { id: true },
+        });
+
+        if (existing) {
+            throw new ConflictException(
+                'Slug sản phẩm đã tồn tại',
+            );
+        }
+
+        // 3. Sinh ID trước khi upload.
+        // Chưa tạo bất kỳ bản ghi Product nào.
+        const productId = randomUUID();
+
+        // 4. Upload song song.
+        // Nếu có ảnh lỗi, uploadManyOrRollback tự dọn ảnh
+        // đã upload thành công rồi throw.
+        const uploadedFiles =
+            await this.imageKitStorage.uploadManyOrRollback(
+                files,
+                productId,
+            );
+
+        // 5. Chỉ ghi DB sau khi toàn bộ ảnh thành công.
+        try {
+            return await this.prisma.$transaction(async (tx) => {
+
+                return tx.product.create({
+                    data: {
+                        id: productId,
+                        name: dto.name,
+                        slug: dto.slug,
+                        price: dto.price,
+                        size: dto.size,
+                        stock: dto.stock ?? 1,
+                        status: dto.status ?? ProductStatus.DRAFT,
+
+                        brand: {
+                            connect: { id: dto.brandId },
+                        },
+                        category: {
+                            connect: { id: dto.categoryId },
+                        },
+
+                        ...(dto.description !== undefined && {
+                            description: dto.description,
+                        }),
+                        ...(dto.originalPrice !== undefined && {
+                            originalPrice: dto.originalPrice,
+                        }),
+                        ...(dto.conditionPercent !== undefined && {
+                            conditionPercent: dto.conditionPercent,
+                        }),
+                        ...(dto.conditionNote !== undefined && {
+                            conditionNote: dto.conditionNote,
+                        }),
+
+                        images: {
+                            create: uploadedFiles.map((image, index) => ({
+                                fileId: image.fileId,
+                                url: image.url,
+                                alt: image.originalName,
+                                sortOrder: index,
+                                isPrimary: index === 0,
+                            })),
+                        },
+                    },
+                    include: this.includeRelations,
+                });
+            });
+
+        } catch (error) {
+            // 1. Xóa toàn bộ ảnh đã upload thành công.
+            const cleanupResults = await Promise.allSettled(
+                uploadedFiles.map((image) =>
+                    this.imageKitStorage.delete(image.fileId),
+                ),
+            );
+
+            const cleanupFailed = cleanupResults.some(
+                (result) => result.status === 'rejected',
+            );
+
+            if (cleanupFailed) {
+                this.logger.error(
+                    `Rollback ảnh ImageKit thất bại: productId=${productId}`,
+                );
+
+                throw new BadGatewayException(
+                    'Tạo sản phẩm thất bại và chưa thể dọn sạch ảnh trên ImageKit',
+                );
+            }
+
+            // 2. Xóa thư mục UUID sau khi rollback ảnh.
+            try {
+                await this.imageKitStorage.deleteProductFolder(
+                    productId,
+                );
+            } catch (folderError) {
+                this.logger.error(
+                    `Không thể xóa thư mục ImageKit: productId=${productId}`,
+                    folderError instanceof Error
+                        ? folderError.stack
+                        : String(folderError),
+                );
+
+                throw new BadGatewayException(
+                    'Tạo sản phẩm thất bại, ảnh đã được xóa nhưng thư mục ImageKit chưa được dọn sạch',
+                );
+            }
+
+            // 3. Giữ nguyên lỗi Prisma gốc nếu cleanup thành công.
+            this.handlePrismaError(error);
+        }
+    }
+
 
     async findAll(query: QueryProductDto, admin = false) {
         const {

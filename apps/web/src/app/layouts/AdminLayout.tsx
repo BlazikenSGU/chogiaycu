@@ -39,6 +39,7 @@ const availablePaths = [
   '/admin',
   '/admin/products',
   '/admin/brands',
+  '/admin/categories',
 ];
 
 export default function AdminLayout() {
