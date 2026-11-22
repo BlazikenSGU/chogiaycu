@@ -11,6 +11,9 @@ const pageTitles: Record<string, string> = {
 
     '/admin/brands': 'Quản lý thương hiệu',
     '/admin/brands/new': 'Thêm thương hiệu',
+
+    '/admin/categories': 'Quản lý danh mục',
+    '/admin/categories/new': 'Thêm danh mục',
 };
 
 export function getPageTitle(pathname: string): string {

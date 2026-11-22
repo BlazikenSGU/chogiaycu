@@ -2,7 +2,6 @@ import { useEffect, useRef, useState } from 'react';
 import { productsApi } from '../api/product.api';
 import type { ProductImage } from '../types/product.types';
 import { getApiErrorMessage } from '../../../lib/api-error';
-import './product-image-manager.css';
 
 interface ProductImageManagerProps {
     productId: string;

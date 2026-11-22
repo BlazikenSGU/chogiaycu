@@ -1,11 +1,10 @@
 import type { RouteObject } from "react-router-dom";
 import AdminLayout from '../layouts/AdminLayout';
 import ProductListPage from "../../features/products/pages/ProductListPage";
-import ProductCreatePage from '../../features/products/pages/ProductCreatePage';
-import ProductEditPage from '../../features/products/pages/ProductEditPage';
 import ProtectedRoute from './ProtectedRoute';
 
 import BrandListPage from "../../features/brands/pages/BrandListPage";
+import CategoryListPage from '../../features/categories/pages/CategoryListPage';
 
 export const adminRoutes: RouteObject[] = [
     {
@@ -24,16 +23,12 @@ export const adminRoutes: RouteObject[] = [
                         element: <ProductListPage />
                     },
                     {
-                        path: 'products/new',
-                        element: <ProductCreatePage />,
-                    },
-                    {
-                        path: 'products/:id/edit',
-                        element: <ProductEditPage />,
-                    },
-                    {
                         path: 'brands',
                         element: <BrandListPage />,
+                    },
+                    {
+                        path: 'categories',
+                        element: <CategoryListPage />,
                     },
                 ],
             }
