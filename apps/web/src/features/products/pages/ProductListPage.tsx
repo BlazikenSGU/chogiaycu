@@ -70,6 +70,10 @@ export default function ProductListPage() {
 
     const [createModalOpen, setCreateModalOpen] = useState<boolean>(false);
     const [editingProduct, setEditingProduct] = useState<Product | null>(null);
+    const [pendingCreate, setPendingCreate] = useState<{
+        productId: string;
+        uploadedCount: number;
+    } | null>(null);
 
     const [sort, setSort] = useState<ProductSort>(
         ProductSort.NEWEST,
@@ -176,12 +180,46 @@ export default function ProductListPage() {
         setPage(1);
     }
 
-    async function handleCreateProduct(data: CreateProductDto) {
-        await productsApi.create(data);
+    async function handleCreateProduct(
+        data: CreateProductDto,
+        images: File[],
+    ) {
+        let productId = pendingCreate?.productId ?? null;
+        let uploadedCount = pendingCreate?.uploadedCount ?? 0;
 
+        // 1. Tạo sản phẩm nếu chưa có ID.
+        if (!productId) {
+            const created = await productsApi.create(data);
+
+            productId = created.id;
+            uploadedCount = 0;
+
+            setPendingCreate({
+                productId,
+                uploadedCount,
+            });
+        }
+
+        // 2. Kiểm tra số ảnh trước khi upload.
+        if (images.length > 6) {
+            throw new Error('Mỗi sản phẩm chỉ được tối đa 6 ảnh.');
+        }
+
+        // 3. Chỉ upload những ảnh chưa thành công.
+        for (let index = uploadedCount; index < images.length; index++) {
+            await productsApi.uploadImage(productId, images[index]);
+
+            uploadedCount = index + 1;
+
+            setPendingCreate({
+                productId,
+                uploadedCount,
+            });
+        }
+
+        // 4. Hoàn thành.
+        setPendingCreate(null);
         setCreateModalOpen(false);
-
-        // Quay về trang đầu và tải lại danh sách
         setPage(1);
         setRefreshKey((value) => value + 1);
     }
@@ -199,7 +237,10 @@ export default function ProductListPage() {
         <div className="space-y-6">
             <ProductFormModal
                 open={createModalOpen}
-                onClose={() => setCreateModalOpen(false)}
+                onClose={() => {
+                    setCreateModalOpen(false);
+                    setPendingCreate(null);
+                }}
                 onSubmit={handleCreateProduct}
             />
 
@@ -468,7 +509,7 @@ export default function ProductListPage() {
                                         >
                                             <td className="px-6 py-4">
                                                 <div className="flex items-center gap-3">
-                                                    <div className="flex h-14 w-14 shrink-0 items-center justify-center overflow-hidden rounded-xl border border-gray-200 bg-gray-50">
+                                                    <div className="flex h-12 w-12 shrink-0 items-center justify-center overflow-hidden rounded-xl border border-gray-200 bg-gray-50">
                                                         {image ? (
                                                             <img
                                                                 src={image.url}

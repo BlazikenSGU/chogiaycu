@@ -24,12 +24,13 @@ import type {
   Product,
   CreateProductDto,
 } from '../types/product.types';
+import ProductImageUploader from './ProductImageUploader';
 
 type ProductFormModalProps = {
   open: boolean;
   product?: Product | null;
   onClose: () => void;
-  onSubmit: (data: CreateProductDto) => Promise<void>;
+  onSubmit: (data: CreateProductDto, imageFile: File[]) => Promise<void>;
 };
 
 type FormValues = {
@@ -109,6 +110,7 @@ export default function ProductFormModal({
 
   const [saving, setSaving] = useState<boolean>(false);
   const [error, setError] = useState<string>('');
+  const [selectedImages, setSelectedImages] = useState<File[]>([]);
 
   const savingRef = useRef<boolean>(false);
   const closeRef = useRef(onClose);
@@ -122,6 +124,7 @@ export default function ProductFormModal({
     if (!open) return;
 
     setValues(getInitialValues(product));
+    setSelectedImages([]);
     setError('');
     setSaving(false);
     savingRef.current = false;
@@ -297,7 +300,7 @@ export default function ProductFormModal({
     setSaving(true);
 
     try {
-      await onSubmit(payload);
+      await onSubmit(payload, selectedImages);
     } catch (err) {
       setError(getApiErrorMessage(err));
     } finally {
@@ -664,6 +667,13 @@ export default function ProductFormModal({
                 </label>
               </div>
             </section>
+
+            {/* Section 4 - Product Images */}
+            <ProductImageUploader
+              files={selectedImages}
+              onChange={setSelectedImages}
+              disabled={saving}
+            />
           </div>
 
           {/* Fixed footer */}
