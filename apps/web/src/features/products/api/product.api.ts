@@ -59,6 +59,29 @@ export const productsApi = {
         return response.data;
     },
 
+    createWithImages: async (
+        data: CreateProductDto,
+        images: File[],
+    ): Promise<Product> => {
+        if (images.length > 6) {
+            throw new Error('Mỗi sản phẩm chỉ được tối đa 6 ảnh');
+        }
+
+        const formData = new FormData();
+        formData.append('payload', JSON.stringify(data));
+
+        for (const image of images) {
+            formData.append('images', image);
+        }
+
+        const response = await api.post<Product>(
+            '/products/with-images',
+            formData,
+        );
+
+        return response.data;
+    },
+
     async update(id: string, data: UpdateProductDto) {
         const response = await api.patch<Product>(
             productPath(id),

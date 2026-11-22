@@ -35,7 +35,7 @@ export default function ProductImageManager({
 }: ProductImageManagerProps) {
     const [images, setImages] = useState<ProductImage[]>([]);
     const [loading, setLoading] = useState(true);
-    const [uploading, setUploading] = useState(false);
+    const [uploading] = useState(false);
     const [busyImageId, setBusyImageId] = useState<string | null>(null);
     const [error, setError] = useState('');
     const [success, setSuccess] = useState('');

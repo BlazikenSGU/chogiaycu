@@ -70,11 +70,6 @@ export default function ProductListPage() {
 
     const [createModalOpen, setCreateModalOpen] = useState<boolean>(false);
     const [editingProduct, setEditingProduct] = useState<Product | null>(null);
-    const [pendingCreate, setPendingCreate] = useState<{
-        productId: string;
-        uploadedCount: number;
-    } | null>(null);
-
     const [sort, setSort] = useState<ProductSort>(
         ProductSort.NEWEST,
     );
@@ -180,49 +175,29 @@ export default function ProductListPage() {
         setPage(1);
     }
 
+
     async function handleCreateProduct(
         data: CreateProductDto,
         images: File[],
     ) {
-        let productId = pendingCreate?.productId ?? null;
-        let uploadedCount = pendingCreate?.uploadedCount ?? 0;
-
-        // 1. Tạo sản phẩm nếu chưa có ID.
-        if (!productId) {
-            const created = await productsApi.create(data);
-
-            productId = created.id;
-            uploadedCount = 0;
-
-            setPendingCreate({
-                productId,
-                uploadedCount,
-            });
-        }
-
-        // 2. Kiểm tra số ảnh trước khi upload.
         if (images.length > 6) {
-            throw new Error('Mỗi sản phẩm chỉ được tối đa 6 ảnh.');
+            throw new Error(
+                'Mỗi sản phẩm chỉ được tối đa 6 ảnh.',
+            );
         }
 
-        // 3. Chỉ upload những ảnh chưa thành công.
-        for (let index = uploadedCount; index < images.length; index++) {
-            await productsApi.uploadImage(productId, images[index]);
+        // Một request duy nhất:
+        // Backend xử lý upload song song và Prisma transaction.
+        await productsApi.createWithImages(data, images);
 
-            uploadedCount = index + 1;
-
-            setPendingCreate({
-                productId,
-                uploadedCount,
-            });
-        }
-
-        // 4. Hoàn thành.
-        setPendingCreate(null);
+        // Chỉ đóng modal khi backend trả về thành công.
         setCreateModalOpen(false);
+
+        // Quay về trang đầu và tải lại danh sách sản phẩm.
         setPage(1);
         setRefreshKey((value) => value + 1);
     }
+
 
     async function handleUpdateProduct(data: UpdateProductDto) {
         if (!editingProduct) return;
@@ -239,7 +214,6 @@ export default function ProductListPage() {
                 open={createModalOpen}
                 onClose={() => {
                     setCreateModalOpen(false);
-                    setPendingCreate(null);
                 }}
                 onSubmit={handleCreateProduct}
             />

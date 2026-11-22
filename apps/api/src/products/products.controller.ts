@@ -9,6 +9,10 @@ import {
   Post,
   Query,
   UseGuards,
+  BadRequestException,
+  UploadedFiles,
+  UseInterceptors,
+  ValidationPipe,
 } from '@nestjs/common';
 import { ProductsService } from './products.service.js';
 import { CreateProductDto } from './dto/create-product.dto.js';
@@ -19,11 +23,15 @@ import { RolesGuard } from '../auth/guards/roles.guard.js';
 import { Roles } from '../auth/decorators/roles.decorator.js';
 import { UserRole } from '../generated/prisma/enums.js';
 
+import { FilesInterceptor } from '@nestjs/platform-express';
+import { memoryStorage } from 'multer';
+import { CreateProductWithImagesDto } from './dto/create-product-with-images.dto.js';
+
 @Controller('products')
 export class ProductsController {
   constructor(
     private readonly productsService: ProductsService,
-  ) {}
+  ) { }
 
   // Public: danh sách sản phẩm đang bán
   @Get()
@@ -54,6 +62,53 @@ export class ProductsController {
   create(@Body() dto: CreateProductDto) {
     return this.productsService.create(dto);
   }
+
+
+  @Post('with-images')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.ADMIN)
+  @UseInterceptors(
+    FilesInterceptor('images', 6, {
+      storage: memoryStorage(),
+      limits: {
+        fileSize: 5 * 1024 * 1024,
+        files: 6,
+        fields: 1,
+      },
+    }),
+  )
+  async createWithImages(
+    @Body() body: CreateProductWithImagesDto,
+    @UploadedFiles() files: Express.Multer.File[],
+  ) {
+    let payload: unknown;
+
+    try {
+      payload = JSON.parse(body.payload);
+    } catch {
+      throw new BadRequestException(
+        'Dữ liệu sản phẩm không phải JSON hợp lệ',
+      );
+    }
+
+    const dto = await new ValidationPipe({
+      transform: true,
+      whitelist: true,
+      forbidNonWhitelisted: true,
+      transformOptions: {
+        enableImplicitConversion: false,
+      },
+    }).transform(payload, {
+      type: 'body',
+      metatype: CreateProductDto,
+    });
+
+    return this.productsService.createWithImages(
+      dto,
+      files ?? [],
+    );
+  }
+
 
   // ADMIN: cập nhật sản phẩm
   @Patch(':id')

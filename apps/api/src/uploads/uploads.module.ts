@@ -2,10 +2,15 @@ import { Module } from '@nestjs/common';
 import { AuthModule } from '../auth/auth.module.js';
 import { UploadsController } from './uploads.controller.js';
 import { UploadsService } from './uploads.service.js';
+import { ImageKitStorageService } from './imagekit-storage.service.js';
 
 @Module({
   imports: [AuthModule],
   controllers: [UploadsController],
-  providers: [UploadsService],
+  providers: [
+    UploadsService,
+    ImageKitStorageService,
+  ],
+  exports: [ImageKitStorageService],
 })
 export class UploadsModule {}
