@@ -1,9 +1,25 @@
 
-import { useEffect } from 'react';
-import { X, PackagePlus, Pencil } from 'lucide-react';
+import {
+  useEffect,
+  useRef,
+  useState,
+  type FormEvent,
+} from 'react';
+import {
+  X,
+  PackagePlus,
+  Pencil,
+  LoaderCircle,
+  Save,
+} from 'lucide-react';
 
-import ProductForm from './ProductForm';
+import { brandsApi } from '../../brands/api/brand.api';
+import { categoriesApi } from '../../categories/api/category.api';
+import type { Brand } from '../../brands/types/brand.types';
+import type { Category } from '../../categories/types/category.types';
+import { getApiErrorMessage } from '../../../lib/api-error';
 
+import { ProductStatus } from '../types/product.types';
 import type {
   Product,
   CreateProductDto,
@@ -16,6 +32,62 @@ type ProductFormModalProps = {
   onSubmit: (data: CreateProductDto) => Promise<void>;
 };
 
+type FormValues = {
+  name: string;
+  slug: string;
+  description: string;
+  price: string;
+  originalPrice: string;
+  size: string;
+  conditionPercent: string;
+  conditionNote: string;
+  stock: string;
+  status: ProductStatus;
+  brandId: string;
+  categoryId: string;
+};
+
+function toSlug(value: string): string {
+  return value
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/đ/g, 'd')
+    .replace(/Đ/g, 'D')
+    .toLowerCase()
+    .trim()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-|-$/g, '');
+}
+
+function getInitialValues(product: Product | null): FormValues {
+  return {
+    name: product?.name ?? '',
+    slug: product?.slug ?? '',
+    description: product?.description ?? '',
+    price: product ? String(product.price) : '',
+    originalPrice:
+      product?.originalPrice == null
+        ? ''
+        : String(product.originalPrice),
+    size: product?.size ?? '',
+    conditionPercent:
+      product?.conditionPercent == null
+        ? ''
+        : String(product.conditionPercent),
+    conditionNote: product?.conditionNote ?? '',
+    stock: String(product?.stock ?? 1),
+    status: product?.status ?? ProductStatus.DRAFT,
+    brandId: product?.brandId ?? '',
+    categoryId: product?.categoryId ?? '',
+  };
+}
+
+const inputClass =
+  'w-full rounded-xl border border-gray-200 bg-white px-4 py-2.5 text-sm text-gray-900 outline-none transition focus:border-gray-900 focus:ring-1 focus:ring-gray-900 disabled:cursor-not-allowed disabled:opacity-50';
+
+const labelClass =
+  'mb-2 block text-sm font-medium text-gray-700';
+
 export default function ProductFormModal({
   open,
   product = null,
@@ -24,44 +96,224 @@ export default function ProductFormModal({
 }: ProductFormModalProps) {
   const isEditing = product !== null;
 
+  const [values, setValues] = useState<FormValues>(() =>
+    getInitialValues(product),
+  );
+
+  const [brands, setBrands] = useState<Brand[]>([]);
+  const [categories, setCategories] = useState<Category[]>([]);
+
+  const [optionsLoading, setOptionsLoading] =
+    useState<boolean>(false);
+  const [optionsError, setOptionsError] = useState<string>('');
+
+  const [saving, setSaving] = useState<boolean>(false);
+  const [error, setError] = useState<string>('');
+
+  const savingRef = useRef<boolean>(false);
+  const closeRef = useRef(onClose);
+
+  useEffect(() => {
+    closeRef.current = onClose;
+  }, [onClose]);
+
+  // Reset form when opening or switching products.
   useEffect(() => {
     if (!open) return;
 
-    function handleKeyDown(event: KeyboardEvent) {
-      if (event.key === 'Escape') {
-        onClose();
+    setValues(getInitialValues(product));
+    setError('');
+    setSaving(false);
+    savingRef.current = false;
+  }, [open, product]);
+
+  // Load Brand and Category options.
+  useEffect(() => {
+    if (!open) return;
+
+    let cancelled = false;
+
+    async function loadOptions() {
+      setOptionsLoading(true);
+      setOptionsError('');
+
+      try {
+        const [brandData, categoryData] = await Promise.all([
+          brandsApi.getAll(),
+          categoriesApi.getAll(),
+        ]);
+
+        if (cancelled) return;
+
+        setBrands(brandData);
+        setCategories(categoryData);
+      } catch (err) {
+        if (!cancelled) {
+          setOptionsError(getApiErrorMessage(err));
+        }
+      } finally {
+        if (!cancelled) {
+          setOptionsLoading(false);
+        }
       }
     }
 
-    document.addEventListener('keydown', handleKeyDown);
+    void loadOptions();
 
     return () => {
-      document.removeEventListener(
-        'keydown',
-        handleKeyDown,
-      );
+      cancelled = true;
     };
-  }, [open, onClose]);
+  }, [open]);
 
+  // Escape key and background scroll lock.
   useEffect(() => {
     if (!open) return;
 
     const previousOverflow = document.body.style.overflow;
     document.body.style.overflow = 'hidden';
 
+    function handleKeyDown(event: KeyboardEvent) {
+      if (event.key === 'Escape' && !savingRef.current) {
+        closeRef.current();
+      }
+    }
+
+    document.addEventListener('keydown', handleKeyDown);
+
     return () => {
       document.body.style.overflow = previousOverflow;
+      document.removeEventListener('keydown', handleKeyDown);
     };
   }, [open]);
+
+  function setField<K extends keyof FormValues>(
+    field: K,
+    value: FormValues[K],
+  ) {
+    setValues((previous) => ({
+      ...previous,
+      [field]: value,
+    }));
+  }
+
+  function handleClose() {
+    if (savingRef.current) return;
+    onClose();
+  }
+
+  async function handleSubmit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+
+    if (savingRef.current) return;
+
+    setError('');
+
+    const name = values.name.trim();
+    const slug = values.slug.trim();
+    const size = values.size.trim();
+
+    if (!name || !slug || !size) {
+      setError('Vui lòng nhập đầy đủ tên, slug và size.');
+      return;
+    }
+
+    if (!/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(slug)) {
+      setError(
+        'Slug chỉ được chứa chữ thường, số và dấu gạch ngang.',
+      );
+      return;
+    }
+
+    if (!values.brandId || !values.categoryId) {
+      setError('Vui lòng chọn thương hiệu và danh mục.');
+      return;
+    }
+
+    const price = Number(values.price);
+    const stock = Number(values.stock);
+
+    if (
+      !values.price.trim() ||
+      !Number.isSafeInteger(price) ||
+      price < 0
+    ) {
+      setError('Giá bán phải là số nguyên không âm.');
+      return;
+    }
+
+    if (
+      !values.stock.trim() ||
+      !Number.isSafeInteger(stock) ||
+      stock < 0
+    ) {
+      setError('Số lượng phải là số nguyên không âm.');
+      return;
+    }
+
+    const originalPrice = values.originalPrice.trim()
+      ? Number(values.originalPrice)
+      : undefined;
+
+    if (
+      originalPrice !== undefined &&
+      (!Number.isSafeInteger(originalPrice) || originalPrice < 0)
+    ) {
+      setError('Giá gốc phải là số nguyên không âm.');
+      return;
+    }
+
+    const conditionPercent = values.conditionPercent.trim()
+      ? Number(values.conditionPercent)
+      : undefined;
+
+    if (
+      conditionPercent !== undefined &&
+      (!Number.isInteger(conditionPercent) ||
+        conditionPercent < 0 ||
+        conditionPercent > 100)
+    ) {
+      setError('Độ mới phải là số nguyên từ 0 đến 100.');
+      return;
+    }
+
+    const payload: CreateProductDto = {
+      name,
+      slug,
+      description: values.description.trim(),
+      price,
+      size,
+      stock,
+      status: values.status,
+      brandId: values.brandId,
+      categoryId: values.categoryId,
+      ...(originalPrice !== undefined && { originalPrice }),
+      ...(conditionPercent !== undefined && {
+        conditionPercent,
+      }),
+      conditionNote: values.conditionNote.trim(),
+    };
+
+    savingRef.current = true;
+    setSaving(true);
+
+    try {
+      await onSubmit(payload);
+    } catch (err) {
+      setError(getApiErrorMessage(err));
+    } finally {
+      savingRef.current = false;
+      setSaving(false);
+    }
+  }
 
   if (!open) return null;
 
   return (
     <div
-      className="fixed inset-0 z-[110] flex items-center justify-center bg-black/60 p-4"
+      className="fixed inset-0 z-[110] flex items-center justify-center bg-black/60 p-3 sm:p-5"
       onMouseDown={(event) => {
         if (event.target === event.currentTarget) {
-          onClose();
+          handleClose();
         }
       }}
     >
@@ -69,12 +321,12 @@ export default function ProductFormModal({
         role="dialog"
         aria-modal="true"
         aria-labelledby="product-modal-title"
-        className="flex max-h-[90vh] w-full max-w-4xl flex-col overflow-hidden rounded-2xl bg-gray-50 shadow-2xl"
+        className="flex max-h-[92vh] w-full max-w-4xl flex-col overflow-hidden rounded-2xl bg-gray-50 shadow-2xl"
       >
         {/* Header */}
-        <div className="flex shrink-0 items-center justify-between border-b border-gray-200 bg-white px-6 py-5">
+        <div className="flex shrink-0 items-center justify-between border-b border-gray-200 bg-white px-5 py-4 sm:px-6">
           <div className="flex items-center gap-3">
-            <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-gray-100">
+            <div className="rounded-xl bg-gray-100 p-3">
               {isEditing ? (
                 <Pencil size={20} />
               ) : (
@@ -91,39 +343,368 @@ export default function ProductFormModal({
                   ? 'Chỉnh sửa sản phẩm'
                   : 'Thêm sản phẩm'}
               </h2>
-
               <p className="mt-1 text-xs text-gray-500">
                 {isEditing
-                  ? 'Cập nhật thông tin sản phẩm.'
-                  : 'Nhập thông tin sản phẩm giày cũ mới.'}
+                  ? 'Cập nhật thông tin giày trong cửa hàng.'
+                  : 'Tạo sản phẩm giày cũ mới.'}
               </p>
             </div>
           </div>
 
           <button
             type="button"
-            onClick={onClose}
+            onClick={handleClose}
+            disabled={saving}
             aria-label="Đóng cửa sổ"
-            title="Đóng"
-            className="rounded-lg p-2 text-gray-500 transition hover:bg-gray-100 hover:text-black"
+            className="rounded-lg p-2 text-gray-500 hover:bg-gray-100 disabled:opacity-40"
           >
             <X size={20} />
           </button>
         </div>
 
-        {/* Scrollable content */}
-        <div className="min-h-0 flex-1 overflow-y-auto p-5 sm:p-6">
-          <ProductForm
-            key={product?.id ?? 'create'}
-            initialValues={product ?? undefined}
-            onSubmit={onSubmit}
-            submitLabel={
-              isEditing
-                ? 'Lưu thay đổi'
-                : 'Tạo sản phẩm'
-            }
-          />
-        </div>
+        {/* Form */}
+        <form
+          onSubmit={(event) => void handleSubmit(event)}
+          className="flex min-h-0 flex-1 flex-col"
+        >
+          <div className="min-h-0 flex-1 space-y-5 overflow-y-auto p-4 sm:p-6">
+            {error && (
+              <div
+                role="alert"
+                className="rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-600"
+              >
+                {error}
+              </div>
+            )}
+
+            {optionsError && (
+              <div
+                role="alert"
+                className="rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-600"
+              >
+                Không thể tải thương hiệu hoặc danh mục:{' '}
+                {optionsError}
+              </div>
+            )}
+
+            {/* Section 1 */}
+            <section className="rounded-2xl border border-gray-200 bg-white p-5">
+              <div className="mb-5 border-b border-gray-100 pb-4">
+                <h3 className="font-semibold text-gray-900">
+                  1. Thông tin sản phẩm
+                </h3>
+                <p className="mt-1 text-xs text-gray-500">
+                  Tên, đường dẫn và phân loại sản phẩm.
+                </p>
+              </div>
+
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                <label className="sm:col-span-2">
+                  <span className={labelClass}>
+                    Tên sản phẩm *
+                  </span>
+                  <input
+                    required
+                    maxLength={200}
+                    disabled={saving}
+                    value={values.name}
+                    onChange={(event) => {
+                      const name = event.target.value;
+
+                      setValues((previous) => ({
+                        ...previous,
+                        name,
+                        slug: isEditing
+                          ? previous.slug
+                          : toSlug(name),
+                      }));
+                    }}
+                    placeholder="Nike Air Jordan 1 Low"
+                    className={inputClass}
+                  />
+                </label>
+
+                <label className="sm:col-span-2">
+                  <span className={labelClass}>Slug *</span>
+                  <input
+                    required
+                    maxLength={220}
+                    disabled={saving}
+                    value={values.slug}
+                    onChange={(event) =>
+                      setField('slug', event.target.value)
+                    }
+                    placeholder="nike-air-jordan-1-low"
+                    className={inputClass}
+                  />
+                  <span className="mt-1 block text-xs text-gray-400">
+                    Khi chỉnh sửa, slug không tự thay đổi theo tên.
+                  </span>
+                </label>
+
+                <label>
+                  <span className={labelClass}>
+                    Thương hiệu *
+                  </span>
+                  <select
+                    required
+                    value={values.brandId}
+                    disabled={saving || optionsLoading}
+                    onChange={(event) =>
+                      setField('brandId', event.target.value)
+                    }
+                    className={inputClass}
+                  >
+                    <option value="">Chọn thương hiệu</option>
+                    {brands.map((brand) => (
+                      <option key={brand.id} value={brand.id}>
+                        {brand.name}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+
+                <label>
+                  <span className={labelClass}>
+                    Danh mục *
+                  </span>
+                  <select
+                    required
+                    value={values.categoryId}
+                    disabled={saving || optionsLoading}
+                    onChange={(event) =>
+                      setField('categoryId', event.target.value)
+                    }
+                    className={inputClass}
+                  >
+                    <option value="">Chọn danh mục</option>
+                    {categories.map((category) => (
+                      <option key={category.id} value={category.id}>
+                        {category.name}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+              </div>
+            </section>
+
+            {/* Section 2 */}
+            <section className="rounded-2xl border border-gray-200 bg-white p-5">
+              <div className="mb-5 border-b border-gray-100 pb-4">
+                <h3 className="font-semibold text-gray-900">
+                  2. Giá bán và tình trạng
+                </h3>
+                <p className="mt-1 text-xs text-gray-500">
+                  Giá, kích thước, độ mới và tồn kho.
+                </p>
+              </div>
+
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                <label>
+                  <span className={labelClass}>
+                    Giá bán (VNĐ) *
+                  </span>
+                  <input
+                    required
+                    type="number"
+                    min="0"
+                    step="1"
+                    disabled={saving}
+                    value={values.price}
+                    onChange={(event) =>
+                      setField('price', event.target.value)
+                    }
+                    className={inputClass}
+                  />
+                </label>
+
+                <label>
+                  <span className={labelClass}>
+                    Giá gốc (VNĐ)
+                  </span>
+                  <input
+                    type="number"
+                    min="0"
+                    step="1"
+                    disabled={saving}
+                    value={values.originalPrice}
+                    onChange={(event) =>
+                      setField('originalPrice', event.target.value)
+                    }
+                    className={inputClass}
+                  />
+                </label>
+
+                <label>
+                  <span className={labelClass}>Size *</span>
+                  <input
+                    required
+                    maxLength={20}
+                    disabled={saving}
+                    value={values.size}
+                    onChange={(event) =>
+                      setField('size', event.target.value)
+                    }
+                    placeholder="42"
+                    className={inputClass}
+                  />
+                </label>
+
+                <label>
+                  <span className={labelClass}>
+                    Độ mới (%)
+                  </span>
+                  <input
+                    type="number"
+                    min="0"
+                    max="100"
+                    step="1"
+                    disabled={saving}
+                    value={values.conditionPercent}
+                    onChange={(event) =>
+                      setField('conditionPercent', event.target.value)
+                    }
+                    placeholder="90"
+                    className={inputClass}
+                  />
+                </label>
+
+                <label>
+                  <span className={labelClass}>
+                    Số lượng *
+                  </span>
+                  <input
+                    required
+                    type="number"
+                    min="0"
+                    step="1"
+                    disabled={saving}
+                    value={values.stock}
+                    onChange={(event) =>
+                      setField('stock', event.target.value)
+                    }
+                    className={inputClass}
+                  />
+                </label>
+
+                <label>
+                  <span className={labelClass}>
+                    Trạng thái
+                  </span>
+                  <select
+                    value={values.status}
+                    disabled={saving}
+                    onChange={(event) =>
+                      setField(
+                        'status',
+                        event.target.value as ProductStatus,
+                      )
+                    }
+                    className={inputClass}
+                  >
+                    <option value={ProductStatus.DRAFT}>
+                      Bản nháp
+                    </option>
+                    <option value={ProductStatus.ACTIVE}>
+                      Đang bán
+                    </option>
+                    <option value={ProductStatus.SOLD_OUT}>
+                      Hết hàng
+                    </option>
+                    <option value={ProductStatus.HIDDEN}>
+                      Đã ẩn
+                    </option>
+                  </select>
+                </label>
+              </div>
+            </section>
+
+            {/* Section 3 */}
+            <section className="rounded-2xl border border-gray-200 bg-white p-5">
+              <div className="mb-5 border-b border-gray-100 pb-4">
+                <h3 className="font-semibold text-gray-900">
+                  3. Mô tả và ghi chú
+                </h3>
+                <p className="mt-1 text-xs text-gray-500">
+                  Thông tin chi tiết về sản phẩm.
+                </p>
+              </div>
+
+              <div className="space-y-4">
+                <label className="block">
+                  <span className={labelClass}>
+                    Mô tả sản phẩm
+                  </span>
+                  <textarea
+                    rows={4}
+                    disabled={saving}
+                    value={values.description}
+                    onChange={(event) =>
+                      setField('description', event.target.value)
+                    }
+                    placeholder="Mô tả kiểu dáng, chất liệu..."
+                    className={`${inputClass} resize-y`}
+                  />
+                </label>
+
+                <label className="block">
+                  <span className={labelClass}>
+                    Ghi chú tình trạng
+                  </span>
+                  <textarea
+                    rows={3}
+                    disabled={saving}
+                    value={values.conditionNote}
+                    onChange={(event) =>
+                      setField('conditionNote', event.target.value)
+                    }
+                    placeholder="Đế còn tốt, xước nhẹ..."
+                    className={`${inputClass} resize-y`}
+                  />
+                </label>
+              </div>
+            </section>
+          </div>
+
+          {/* Fixed footer */}
+          <div className="flex shrink-0 items-center justify-end gap-3 border-t border-gray-200 bg-white px-5 py-4 sm:px-6">
+            <button
+              type="button"
+              onClick={handleClose}
+              disabled={saving}
+              className="rounded-xl border border-gray-200 px-5 py-2.5 text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50"
+            >
+              Hủy
+            </button>
+
+            <button
+              type="submit"
+              disabled={
+                saving ||
+                optionsLoading ||
+                Boolean(optionsError) ||
+                brands.length === 0 ||
+                categories.length === 0
+              }
+              className="flex items-center gap-2 rounded-xl bg-black px-5 py-2.5 text-sm font-medium text-white hover:bg-gray-800 disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              {saving ? (
+                <LoaderCircle
+                  size={17}
+                  className="animate-spin"
+                />
+              ) : (
+                <Save size={17} />
+              )}
+
+              {saving
+                ? 'Đang lưu...'
+                : isEditing
+                  ? 'Lưu thay đổi'
+                  : 'Tạo sản phẩm'}
+            </button>
+          </div>
+        </form>
       </div>
     </div>
   );
