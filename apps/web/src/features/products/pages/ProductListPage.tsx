@@ -203,6 +203,7 @@ export default function ProductListPage() {
         if (!editingProduct) return;
 
         const productId = editingProduct.id;
+
         if (editingProduct.images.length + images.length > 6) {
             throw new Error(
                 `Mỗi sản phẩm chỉ chứa tối đa 6 ảnh`
@@ -212,18 +213,15 @@ export default function ProductListPage() {
         const uploadedImageIds: string[] = [];
 
         try {
-            for (const image of images) {
-                const uploaded = await productsApi.uploadImage(
-                    productId,
-                    image
+            if (images.length > 0) {
+                const uploadedImages = await productsApi.uploadImagesBatch(productId, images);
+                uploadedImageIds.push(
+                    ...uploadedImages.map((image) => image.id),
                 );
-
-                uploadedImageIds.push(uploaded.id);
             }
-            // Cập nhật thông tin sản phẩm
+
             await productsApi.update(productId, data);
         } catch (error) {
-            // nếu fail ở bước update thì chỉ xóa các ảnh push ở lượt update này thôi
             const cleanupResults = await Promise.allSettled(
                 uploadedImageIds.map((imageId) =>
                     productsApi.deleteImage(productId, imageId),
@@ -232,12 +230,14 @@ export default function ProductListPage() {
 
             setRefreshKey((value) => value + 1);
 
-            if (cleanupResults.some(
-                (result) => result.status === 'rejected',
-            )) {
-                throw new Error(`
-                    Lưu sản phẩm thất bại. Một số ảnh mới có thể chưa được dọn sạch. Vui lòng tải lại sản phẩm để kiểm tra trước khi thử lại.
-                    `);
+            if (
+                cleanupResults.some(
+                    (result) => result.status === 'rejected',
+                )
+            ) {
+                throw new Error(
+                    'Lưu sản phẩm thất bại. Một số ảnh mới chưa được dọn sạch. Vui lòng tải lại sản phẩm để kiểm tra.',
+                );
             }
 
             throw error;

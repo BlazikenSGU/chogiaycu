@@ -216,6 +216,9 @@ export class ImageKitStorageService {
   async uploadManyOrRollback(
     files: Express.Multer.File[],
     productId: string,
+    options: {
+      deleteFolderOnRollback?: boolean;
+    } = {},
   ): Promise<UploadedImageKitFile[]> {
     // 1. Kiểm tra số lượng ảnh
     if (files.length > 6) {
@@ -278,23 +281,28 @@ export class ImageKitStorageService {
         );
       }
 
-      // 3. Dọn thư mục UUID của sản phẩm tạo thất bại.
-      try {
-        await this.deleteProductFolder(productId);
-      } catch (error) {
-        console.error(
-          `[ImageKit rollback] Không thể xóa thư mục productId=${productId}`,
-          error,
-        );
+      // 3. Dọn thư mục UUID của sản phẩm tạo thất bại - case khi tạo mới ản phẩm
+      // còn khi chỉnh sửa, không xóa folder vì có thể folder đang chứa ảnh cũ
+      if (options.deleteFolderOnRollback !== false) {
+        try {
+          await this.deleteProductFolder(productId);
+        } catch (error) {
+          console.error(
+            `[ImageKit rollback] Không thể xóa thư mục productId=${productId}`,
+            error,
+          );
 
-        throw new BadGatewayException(
-          'Upload thất bại, ảnh đã được rollback nhưng chưa thể xóa thư mục ImageKit',
-        );
+          throw new BadGatewayException(
+            'Upload thất bại, ảnh đã được rollback nhưng chưa thể xóa thư mục ImageKit',
+          );
+        }
       }
 
       // 4. Thông báo lỗi upload.
       throw new BadGatewayException(
-        'Upload ảnh thất bại. Đã rollback ảnh và thư mục ImageKit.',
+        options.deleteFolderOnRollback === false ?
+          'Upload ảnh thất bại. Đã rollback các ảnh mới upload' :
+          'Upload ảnh thất bại. Đã rollback ảnh và thư mục ImageKit.',
       );
     }
 
