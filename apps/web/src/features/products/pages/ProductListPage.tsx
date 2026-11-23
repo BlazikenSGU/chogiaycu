@@ -198,22 +198,24 @@ export default function ProductListPage() {
         setRefreshKey((value) => value + 1);
     }
 
-    async function handleUpdateProduct(data: UpdateProductDto, images: File[]) {
+
+    async function handleUpdateProduct(
+        data: UpdateProductDto,
+        images: File[],
+    ) {
         if (!editingProduct) return;
 
         const productId = editingProduct.id;
-
-        if (editingProduct.images.length + images.length > 6) {
-            throw new Error(
-                `Mỗi sản phẩm chỉ chứa tối đa 6 ảnh`
-            );
-        }
-
         const uploadedImageIds: string[] = [];
 
         try {
             if (images.length > 0) {
-                const uploadedImages = await productsApi.uploadImagesBatch(productId, images);
+                const uploadedImages =
+                    await productsApi.uploadImagesBatch(
+                        productId,
+                        images,
+                    );
+
                 uploadedImageIds.push(
                     ...uploadedImages.map((image) => image.id),
                 );
@@ -227,6 +229,7 @@ export default function ProductListPage() {
                 ),
             );
 
+            // Chỉ tải lại danh sách nếu cần đồng bộ sau lỗi.
             setRefreshKey((value) => value + 1);
 
             if (
@@ -242,9 +245,25 @@ export default function ProductListPage() {
             throw error;
         }
 
+        // Chỉ GET lại sản phẩm vừa cập nhật.
+        try {
+            const updatedProduct =
+                await productsApi.getById(productId);
+
+            setProducts((previous) =>
+                previous.map((product) =>
+                    product.id === productId
+                        ? updatedProduct
+                        : product,
+                ),
+            );
+        } catch {
+            setRefreshKey((value) => value + 1);
+        }
+
         setEditingProduct(null);
-        setRefreshKey((value) => value + 1);
     }
+
 
 
     function handlePrimaryChange(productId: string, imageId: string) {
