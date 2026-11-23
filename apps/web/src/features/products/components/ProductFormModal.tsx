@@ -33,7 +33,7 @@ type ProductFormModalProps = {
   product?: Product | null;
   onClose: () => void;
   onSubmit: (data: CreateProductDto, imageFile: File[]) => Promise<void>;
-  onPrimaryChange?: () => void;
+  onPrimaryChange?: (productId: string, imageId: string) => void;
 };
 
 type FormValues = {
@@ -234,7 +234,7 @@ export default function ProductFormModal({
         })),
       );
 
-      onPrimaryChange?.();
+      onPrimaryChange?.(product.id, imageId);
 
     } catch (err) {
       setError(getApiErrorMessage(err));

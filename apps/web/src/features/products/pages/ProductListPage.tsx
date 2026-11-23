@@ -198,7 +198,6 @@ export default function ProductListPage() {
         setRefreshKey((value) => value + 1);
     }
 
-
     async function handleUpdateProduct(data: UpdateProductDto, images: File[]) {
         if (!editingProduct) return;
 
@@ -247,6 +246,25 @@ export default function ProductListPage() {
         setRefreshKey((value) => value + 1);
     }
 
+
+    function handlePrimaryChange(productId: string, imageId: string) {
+        setProducts((previous) =>
+            previous.map((product) => {
+                if (product.id !== productId) {
+                    return product;
+                }
+
+                return {
+                    ...product,
+                    images: product.images.map((image) => ({
+                        ...image,
+                        isPrimary: image.id === imageId,
+                    })),
+                };
+            }),
+        );
+    }
+
     return (
         <div className="space-y-6">
             <ProductFormModal
@@ -262,9 +280,7 @@ export default function ProductListPage() {
                 product={editingProduct}
                 onClose={() => setEditingProduct(null)}
                 onSubmit={handleUpdateProduct}
-                onPrimaryChange={() => {
-                    setRefreshKey((value) => value + 1);
-                }}
+                onPrimaryChange={handlePrimaryChange}
             />
 
             {/* Page header */}

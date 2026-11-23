@@ -264,9 +264,35 @@ export class UploadsService {
         productId: string,
         imageId: string,
     ) {
-        await this.getImage(productId, imageId);
-
         return this.prisma.$transaction(async (tx) => {
+            const locked = await tx.$queryRaw<
+                Array<{ id: string }>
+            >`
+                SELECT id
+                FROM products
+                WHERE id = ${productId}
+                FOR UPDATE
+            `;
+
+            if (locked.length === 0) {
+                throw new NotFoundException(
+                    'Không tìm thấy sản phẩm',
+                );
+            }
+
+            const image = await tx.productImage.findFirst({
+                where: {
+                    id: imageId,
+                    productId,
+                },
+            });
+
+            if (!image) {
+                throw new NotFoundException(
+                    'Không tìm thấy ảnh sản phẩm'
+                );
+            }
+
             await tx.productImage.updateMany({
                 where: { productId },
                 data: { isPrimary: false },
