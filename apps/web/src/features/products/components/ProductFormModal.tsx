@@ -22,6 +22,7 @@ import { getApiErrorMessage } from '../../../lib/api-error';
 import { ProductStatus } from '../types/product.types';
 import type {
   Product,
+  ProductImage,
   CreateProductDto,
 } from '../types/product.types';
 import ProductImageUploader from './ProductImageUploader';
@@ -110,7 +111,9 @@ export default function ProductFormModal({
 
   const [saving, setSaving] = useState<boolean>(false);
   const [error, setError] = useState<string>('');
+
   const [selectedImages, setSelectedImages] = useState<File[]>([]);
+  const [existingImages, setExistingImages] = useState<ProductImage[]>([]);
 
   const savingRef = useRef<boolean>(false);
   const closeRef = useRef(onClose);
@@ -125,6 +128,7 @@ export default function ProductFormModal({
 
     setValues(getInitialValues(product));
     setSelectedImages([]);
+    setExistingImages(product?.images ?? []);
     setError('');
     setSaving(false);
     savingRef.current = false;
@@ -669,11 +673,59 @@ export default function ProductFormModal({
             </section>
 
             {/* Section 4 - Product Images */}
-            <ProductImageUploader
-              files={selectedImages}
-              onChange={setSelectedImages}
-              disabled={saving}
-            />
+            {isEditing && (
+              <section className="rounded-2xl border border-gray-200 bg-white p-5">
+                <h3 className="font-semibold text-gray-900">
+                  4. Hình ảnh hiện tại
+                </h3>
+
+                <p className="mt-1 text-xs text-gray-500">
+                  Đã lưu {existingImages.length}/6 ảnh trên ImageKit
+                </p>
+
+                {existingImages.length === 0 ? (
+                  <p className="mt-4 text-sm text-gray-400">
+                    Sản phẩm chưa có hình ảnh.
+                  </p>
+                ) : (
+                  <div className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-3">
+                    {existingImages.map((image) => (
+                      <div
+                        key={image.id}
+                        className="overflow-hidden rounded-xl border border-gray-200"
+                      >
+                        <img
+                          src={image.url}
+                          alt={image.alt ?? 'Hình ảnh sản phẩm'}
+                          className="aspect-square w-full object-cover"
+                        />
+
+                        <div className="p-2 text-center text-xs">
+                          {image.isPrimary ? (
+                            <span className="font-semibold text-green-700">
+                              Ảnh đại diện
+                            </span>
+                          ) : (
+                            <span className="text-gray-400">
+                              Ảnh phụ
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </section>
+            )}
+
+            {(!isEditing || existingImages.length < 6) && (
+              <ProductImageUploader
+                files={selectedImages}
+                onChange={setSelectedImages}
+                disabled={saving}
+                maxImages={6 - (isEditing ? existingImages.length : 0)}
+              />
+            )}
           </div>
 
           {/* Fixed footer */}

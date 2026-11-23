@@ -55,8 +55,8 @@ export default function ProductListPage() {
     const [meta, setMeta] =
         useState<PaginatedProducts['meta'] | null>(null);
 
-    const [searchInput, setSearchInput] = useState<string>('');
     const [search, setSearch] = useState<string>('');
+    const [debouncedSearch, setDebouncedSearch] = useState('');
     const [status, setStatus] = useState<ProductStatus | ''>('');
 
     const [brandId, setBrandId] = useState<string>('');
@@ -115,6 +115,14 @@ export default function ProductListPage() {
         };
     }, []);
 
+    useEffect(() => {
+        const timer = setTimeout(() => {
+            setPage(1);
+            setDebouncedSearch(search.trim());
+        }, 300);
+
+        return () => clearTimeout(timer);
+    }, [search]);
 
     // load danh sách sản phẩm
     useEffect(() => {
@@ -128,7 +136,7 @@ export default function ProductListPage() {
                 const result = await productsApi.getAll({
                     page,
                     limit: 12,
-                    search: search || undefined,
+                    search: debouncedSearch || undefined,
                     status: status || undefined,
                     brandId: brandId || undefined,
                     categoryId: categoryId || undefined,
@@ -157,16 +165,9 @@ export default function ProductListPage() {
         return () => {
             cancelled = true;
         };
-    }, [page, search, status, brandId, categoryId, sort, refreshKey]);
-
-    function handleSearch(event: React.FormEvent<HTMLFormElement>) {
-        event.preventDefault();
-        setPage(1);
-        setSearch(searchInput.trim());
-    }
+    }, [page, debouncedSearch, status, brandId, categoryId, sort, refreshKey]);
 
     function handleResetFilters() {
-        setSearchInput('');
         setSearch('');
         setBrandId('');
         setCategoryId('');
@@ -174,7 +175,6 @@ export default function ProductListPage() {
         setSort(ProductSort.NEWEST);
         setPage(1);
     }
-
 
     async function handleCreateProduct(
         data: CreateProductDto,
@@ -199,10 +199,49 @@ export default function ProductListPage() {
     }
 
 
-    async function handleUpdateProduct(data: UpdateProductDto) {
+    async function handleUpdateProduct(data: UpdateProductDto, images: File[]) {
         if (!editingProduct) return;
 
-        await productsApi.update(editingProduct.id, data);
+        const productId = editingProduct.id;
+        if (editingProduct.images.length + images.length > 6) {
+            throw new Error(
+                `Mỗi sản phẩm chỉ chứa tối đa 6 ảnh`
+            );
+        }
+
+        const uploadedImageIds: string[] = [];
+
+        try {
+            for (const image of images) {
+                const uploaded = await productsApi.uploadImage(
+                    productId,
+                    image
+                );
+
+                uploadedImageIds.push(uploaded.id);
+            }
+            // Cập nhật thông tin sản phẩm
+            await productsApi.update(productId, data);
+        } catch (error) {
+            // nếu fail ở bước update thì chỉ xóa các ảnh push ở lượt update này thôi
+            const cleanupResults = await Promise.allSettled(
+                uploadedImageIds.map((imageId) =>
+                    productsApi.deleteImage(productId, imageId),
+                ),
+            );
+
+            setRefreshKey((value) => value + 1);
+
+            if (cleanupResults.some(
+                (result) => result.status === 'rejected',
+            )) {
+                throw new Error(`
+                    Lưu sản phẩm thất bại. Một số ảnh mới có thể chưa được dọn sạch. Vui lòng tải lại sản phẩm để kiểm tra trước khi thử lại.
+                    `);
+            }
+
+            throw error;
+        }
 
         setEditingProduct(null);
         setRefreshKey((value) => value + 1);
@@ -254,51 +293,36 @@ export default function ProductListPage() {
             {/* Product table */}
             <section className="overflow-hidden rounded-2xl border border-gray-200 bg-white">
                 <div className="space-y-4 border-b border-gray-100 p-5">
-                    <div className="flex items-center gap-3">
-                        <div className="rounded-xl bg-gray-100 p-2.5">
-                            <Package size={19} />
-                        </div>
-
-                        <div>
-                            <h2 className="font-semibold text-gray-900">
-                                Danh sách sản phẩm
-                            </h2>
-                            <p className="mt-1 text-xs text-gray-400">
-                                {meta?.total ?? 0} sản phẩm
-                            </p>
-                        </div>
-                    </div>
-
                     {/* Filters */}
                     <div className="flex flex-wrap items-center gap-3">
-                        <form
-                            onSubmit={handleSearch}
-                            className="flex min-w-[220px] flex-1 items-center gap-2"
-                        >
-                            <div className="relative min-w-0 flex-1">
-                                <Search
-                                    size={17}
-                                    className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"
-                                />
-
-                                <input
-                                    type="search"
-                                    value={searchInput}
-                                    onChange={(event) =>
-                                        setSearchInput(event.target.value)
-                                    }
-                                    placeholder="Tìm sản phẩm..."
-                                    className="w-full rounded-xl border border-gray-200 bg-gray-50 py-2.5 pl-10 pr-3 text-sm outline-none focus:border-black"
-                                />
+                        <div className="flex items-center gap-3">
+                            <div className="rounded-xl bg-gray-100 p-2.5">
+                                <Package size={19} />
                             </div>
 
-                            <button
-                                type="submit"
-                                className="rounded-xl border border-gray-200 px-4 py-2.5 text-sm font-medium transition hover:bg-gray-50"
-                            >
-                                Tìm
-                            </button>
-                        </form>
+                            <div>
+                                <h2 className="font-semibold text-gray-900">
+                                    Danh sách sản phẩm
+                                </h2>
+                                <p className="mt-1 text-xs text-gray-400">
+                                    {meta?.total ?? 0} sản phẩm
+                                </p>
+                            </div>
+                        </div>
+                        <div className="relative min-w-[220px] flex-1">
+                            <Search
+                                size={17}
+                                className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"
+                            />
+
+                            <input
+                                type="search"
+                                value={search}
+                                onChange={(event) => setSearch(event.target.value)}
+                                placeholder="Tìm sản phẩm..."
+                                className="w-full rounded-xl border border-gray-200 bg-gray-50 py-2.5 pl-10 pr-3 text-sm outline-none focus:border-black"
+                            />
+                        </div>
 
 
                         {/* Brand filter */}
@@ -389,7 +413,6 @@ export default function ProductListPage() {
                             type="button"
                             onClick={handleResetFilters}
                             disabled={
-                                !searchInput &&
                                 !search &&
                                 !brandId &&
                                 !categoryId &&
