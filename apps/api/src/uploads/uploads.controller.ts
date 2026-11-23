@@ -1,4 +1,5 @@
 import {
+    BadRequestException,
     Controller,
     Delete,
     Param,
@@ -6,10 +7,11 @@ import {
     Patch,
     Post,
     UploadedFile,
+    UploadedFiles,
     UseGuards,
     UseInterceptors,
 } from '@nestjs/common';
-import { FileInterceptor } from '@nestjs/platform-express';
+import { FileInterceptor, FilesInterceptor } from '@nestjs/platform-express';
 import { memoryStorage } from 'multer';
 import { UploadsService } from './uploads.service.js';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard.js';
@@ -25,6 +27,34 @@ export class UploadsController {
         private readonly uploadsService: UploadsService,
     ) { }
 
+    //upload 1 lúc nhiều ảnh
+    @Post('batch')
+    @UseInterceptors(
+        FilesInterceptor('images', 6, {
+            storage: memoryStorage(),
+            limits: {
+                fileSize: 5 * 1024 * 1024,
+                files: 6,
+            },
+        }),
+    )
+    uploadBatch(
+        @Param('id') productId: string,
+        @UploadedFiles() files: Express.Multer.File[],
+    ) {
+        if (!files || files.length === 0) {
+            throw new BadRequestException(
+                'Vui lòng chọn ít nhất một ảnh',
+            );
+        }
+
+        return this.uploadsService.uploadBatch(
+            productId,
+            files,
+        );
+    }
+
+    // upload 1 lúc 1 ảnh
     @Post()
     @UseInterceptors(
         FileInterceptor('file', {
@@ -52,6 +82,7 @@ export class UploadsController {
         );
     }
 
+    //set ảnh đại diện
     @Patch(':imageId/primary')
     setPrimary(
         @Param('id') productId: string,
@@ -63,7 +94,8 @@ export class UploadsController {
         );
     }
 
-    @Delete(':imageId') 
+    //xóa ảnh
+    @Delete(':imageId')
     remove(
         @Param('id') productId: string,
         @Param('imageId') imageId: string,

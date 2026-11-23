@@ -11,6 +11,7 @@ import {
   Pencil,
   LoaderCircle,
   Save,
+  Trash2,
 } from 'lucide-react';
 
 import { brandsApi } from '../../brands/api/brand.api';
@@ -18,10 +19,12 @@ import { categoriesApi } from '../../categories/api/category.api';
 import type { Brand } from '../../brands/types/brand.types';
 import type { Category } from '../../categories/types/category.types';
 import { getApiErrorMessage } from '../../../lib/api-error';
+import { productsApi } from '../api/product.api';
 
 import { ProductStatus } from '../types/product.types';
 import type {
   Product,
+  ProductImage,
   CreateProductDto,
 } from '../types/product.types';
 import ProductImageUploader from './ProductImageUploader';
@@ -31,6 +34,8 @@ type ProductFormModalProps = {
   product?: Product | null;
   onClose: () => void;
   onSubmit: (data: CreateProductDto, imageFile: File[]) => Promise<void>;
+  onPrimaryChange?: (productId: string, imageId: string) => void;
+  onImageDeleted?: (productId: string, imageId: string) => void;
 };
 
 type FormValues = {
@@ -94,6 +99,8 @@ export default function ProductFormModal({
   product = null,
   onClose,
   onSubmit,
+  onPrimaryChange,
+  onImageDeleted,
 }: ProductFormModalProps) {
   const isEditing = product !== null;
 
@@ -110,7 +117,14 @@ export default function ProductFormModal({
 
   const [saving, setSaving] = useState<boolean>(false);
   const [error, setError] = useState<string>('');
+
   const [selectedImages, setSelectedImages] = useState<File[]>([]);
+  const [existingImages, setExistingImages] = useState<ProductImage[]>([]);
+
+  const [changingPrimaryId, setChangingPrimaryId] = useState<string | null>(null);
+  const [deletingImageId, setDeletingImageId] = useState<string | null>(null);
+
+  const deletingImageRef = useRef(false);
 
   const savingRef = useRef<boolean>(false);
   const closeRef = useRef(onClose);
@@ -125,6 +139,7 @@ export default function ProductFormModal({
 
     setValues(getInitialValues(product));
     setSelectedImages([]);
+    setExistingImages(product?.images ?? []);
     setError('');
     setSaving(false);
     savingRef.current = false;
@@ -197,6 +212,89 @@ export default function ProductFormModal({
       ...previous,
       [field]: value,
     }));
+  }
+
+  async function handleSetPrimary(imageId: string) {
+    if (!product || savingRef.current || changingPrimaryId || deletingImageRef.current) {
+      return;
+    }
+
+    const currentImage = existingImages.find(
+      (image) => image.id === imageId,
+    );
+
+    if (!currentImage || currentImage.isPrimary) {
+      return;
+    }
+
+    try {
+      setChangingPrimaryId(imageId);
+      setError('');
+
+      await productsApi.setPrimaryImage(product.id, imageId);
+
+      setExistingImages((previous) =>
+        previous.map((image) => ({
+          ...image,
+          isPrimary: image.id === imageId,
+        })),
+      );
+
+      onPrimaryChange?.(product.id, imageId);
+
+    } catch (err) {
+      setError(getApiErrorMessage(err));
+    } finally {
+      setChangingPrimaryId(null);
+    }
+  }
+
+
+  async function handleDeleteImage(imageId: string) {
+    if (
+      !product ||
+      savingRef.current ||
+      changingPrimaryId !== null ||
+      deletingImageRef.current
+    ) {
+      return;
+    }
+
+    const image = existingImages.find(
+      (item) => item.id === imageId,
+    );
+
+    if (!image || image.isPrimary) {
+      return;
+    }
+
+    const confirmed = window.confirm(
+      'Bạn có chắc muốn xóa ảnh này?\n\n' +
+      'Ảnh sẽ bị xóa khỏi sản phẩm và ImageKit. ' +
+      'Thao tác này không thể hoàn tác.',
+    );
+
+    if (!confirmed) return;
+
+    deletingImageRef.current = true;
+    setDeletingImageId(imageId);
+    setError('');
+
+    try {
+      await productsApi.deleteImage(product.id, imageId);
+
+      setExistingImages((previous) =>
+        previous.filter((item) => item.id !== imageId),
+      );
+
+      // Thông báo cho ProductListPage cập nhật sản phẩm.
+      onImageDeleted?.(product.id, imageId);
+    } catch (err) {
+      setError(getApiErrorMessage(err));
+    } finally {
+      deletingImageRef.current = false;
+      setDeletingImageId(null);
+    }
   }
 
   function handleClose() {
@@ -669,11 +767,88 @@ export default function ProductFormModal({
             </section>
 
             {/* Section 4 - Product Images */}
-            <ProductImageUploader
-              files={selectedImages}
-              onChange={setSelectedImages}
-              disabled={saving}
-            />
+            {isEditing && (
+              <section className="rounded-2xl border border-gray-200 bg-white p-5">
+                <h3 className="font-semibold text-gray-900">
+                  4. Hình ảnh hiện tại
+                </h3>
+
+                <p className="mt-1 text-xs text-gray-500">
+                  Đã lưu {existingImages.length}/6 ảnh trên ImageKit
+                </p>
+
+                {existingImages.length === 0 ? (
+                  <p className="mt-4 text-sm text-gray-400">
+                    Sản phẩm chưa có hình ảnh.
+                  </p>
+                ) : (
+                  <div className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-3">
+                    {existingImages.map((image) => (
+                      <div
+                        key={image.id}
+                        className="overflow-hidden rounded-xl border border-gray-200"
+                      >
+                        {/* Vùng ảnh */}
+                        <div className="relative">
+                          <img
+                            src={image.url}
+                            alt={image.alt ?? 'Hình ảnh sản phẩm'}
+                            className="aspect-square w-full object-cover"
+                          />
+
+                          {/* Icon xóa nằm đè trên ảnh */}
+                          {!image.isPrimary && (
+                            <button
+                              type="button"
+                              title="Xóa ảnh"
+                              aria-label="Xóa ảnh"
+                              onClick={() => void handleDeleteImage(image.id)}
+                              disabled={saving || changingPrimaryId !== null || deletingImageId !== null}
+                              className="absolute right-1.5 top-1.5 z-10 flex h-7 w-7 items-center justify-center rounded-lg bg-white/60 text-black-500 shadow-sm backdrop-blur-[2px] transition hover:bg-red-50 hover:text-red-600 disabled:cursor-not-allowed disabled:opacity-50"
+                            >
+                              {deletingImageId === image.id ? (
+                                <LoaderCircle size={15} className="animate-spin" />
+                              ) : (
+                                <Trash2 size={15} strokeWidth={2} />
+                              )}
+                            </button>
+                          )}
+                        </div>
+
+                        {/* Giữ nguyên phần nút Đặt làm đại diện ở dưới ảnh */}
+                        <div className="p-2 text-center text-xs">
+                          {image.isPrimary ? (
+                            <span className="font-semibold text-green-700">
+                              ✓ Ảnh đại diện
+                            </span>
+                          ) : (
+                            <button
+                              type="button"
+                              onClick={() => void handleSetPrimary(image.id)}
+                              disabled={saving || changingPrimaryId !== null || deletingImageId !== null}
+                              className="w-full rounded-lg bg-blue-600 px-2 py-2 font-medium text-white transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-50"
+                            >
+                              {changingPrimaryId === image.id
+                                ? 'Đang cập nhật...'
+                                : 'Đặt làm đại diện'}
+                            </button>
+                          )}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </section>
+            )}
+
+            {(!isEditing || existingImages.length < 6) && (
+              <ProductImageUploader
+                files={selectedImages}
+                onChange={setSelectedImages}
+                disabled={saving}
+                maxImages={6 - (isEditing ? existingImages.length : 0)}
+              />
+            )}
           </div>
 
           {/* Fixed footer */}

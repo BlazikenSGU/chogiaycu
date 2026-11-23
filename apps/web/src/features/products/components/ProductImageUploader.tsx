@@ -15,6 +15,7 @@ type ProductImageUploaderProps = {
     files: File[];
     onChange: (files: File[]) => void;
     disabled?: boolean;
+    maxImages?: number;
 };
 
 type PreviewItem = {
@@ -26,6 +27,7 @@ export default function ProductImageUploader({
     files,
     onChange,
     disabled = false,
+    maxImages = MAX_IMAGES
 }: ProductImageUploaderProps) {
     const inputRef = useRef<HTMLInputElement>(null);
     const [error, setError] = useState('');
@@ -55,9 +57,9 @@ export default function ProductImageUploader({
         setError('');
 
         // Kiểm tra tổng số ảnh
-        if (files.length + selected.length > MAX_IMAGES) {
+        if (files.length + selected.length > maxImages) {
             setError(
-                `Mỗi sản phẩm chỉ được tối đa ${MAX_IMAGES} ảnh. Hiện đã chọn ${files.length} ảnh.`,
+                `Mỗi sản phẩm chỉ được tối đa ${maxImages} ảnh. Hiện đã chọn ${files.length} ảnh.`,
             );
             return;
         }
@@ -90,7 +92,7 @@ export default function ProductImageUploader({
                     Hình ảnh sản phẩm
                 </h3>
                 <p className="mt-1 text-xs text-gray-500">
-                    Đã chọn {files.length}/{MAX_IMAGES} ảnh
+                    Đã chọn {files.length}/{maxImages} ảnh
                 </p>
             </div>
 
@@ -107,7 +109,7 @@ export default function ProductImageUploader({
 
             <button
                 type="button"
-                disabled={disabled || files.length >= MAX_IMAGES}
+                disabled={disabled || files.length >= maxImages}
                 onClick={() => inputRef.current?.click()}
                 className="flex w-full flex-col items-center justify-center rounded-xl border-2 border-dashed border-gray-300 bg-gray-50 px-5 py-8 text-center transition hover:border-gray-500 hover:bg-gray-100 disabled:cursor-not-allowed disabled:opacity-50"
             >

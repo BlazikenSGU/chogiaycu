@@ -283,10 +283,20 @@ export class ProductsService {
             }),
             ...(admin && status && { status }),
             ...(search && {
-                name: {
-                    contains: search,
-                    mode: 'insensitive',
-                },
+                OR: [
+                    {
+                        name: {
+                            contains: search,
+                            mode: 'insensitive',
+                        },
+                    },
+                    {
+                        slug: {
+                            contains: search,
+                            mode: 'insensitive',
+                        },
+                    },
+                ],
             }),
             ...(brandId && { brandId }),
             ...(categoryId && { categoryId }),

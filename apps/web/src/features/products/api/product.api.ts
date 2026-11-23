@@ -107,6 +107,34 @@ export const productsApi = {
         return response.data;
     },
 
+    async uploadImagesBatch(
+        productId: string,
+        images: File[],
+    ): Promise<ProductImage[]> {
+        if (images.length === 0) {
+            return [];
+        }
+
+        if (images.length > 6) {
+            throw new Error(
+                'Mỗi lần chỉ được upload tối đa 6 ảnh',
+            );
+        }
+
+        const formData = new FormData();
+
+        for (const image of images) {
+            formData.append('images', image);
+        }
+
+        const response = await api.post<ProductImage[]>(
+            `${productPath(productId)}/images/batch`,
+            formData,
+        );
+
+        return response.data;
+    },
+
     async setPrimaryImage(
         productId: string,
         imageId: string,
