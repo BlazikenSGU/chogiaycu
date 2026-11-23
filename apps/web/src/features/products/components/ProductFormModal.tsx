@@ -18,6 +18,7 @@ import { categoriesApi } from '../../categories/api/category.api';
 import type { Brand } from '../../brands/types/brand.types';
 import type { Category } from '../../categories/types/category.types';
 import { getApiErrorMessage } from '../../../lib/api-error';
+import { productsApi } from '../api/product.api';
 
 import { ProductStatus } from '../types/product.types';
 import type {
@@ -32,6 +33,7 @@ type ProductFormModalProps = {
   product?: Product | null;
   onClose: () => void;
   onSubmit: (data: CreateProductDto, imageFile: File[]) => Promise<void>;
+  onPrimaryChange?: () => void;
 };
 
 type FormValues = {
@@ -95,6 +97,7 @@ export default function ProductFormModal({
   product = null,
   onClose,
   onSubmit,
+  onPrimaryChange,
 }: ProductFormModalProps) {
   const isEditing = product !== null;
 
@@ -114,6 +117,8 @@ export default function ProductFormModal({
 
   const [selectedImages, setSelectedImages] = useState<File[]>([]);
   const [existingImages, setExistingImages] = useState<ProductImage[]>([]);
+
+  const [changingPrimaryId, setChangingPrimaryId] = useState<string | null>(null);
 
   const savingRef = useRef<boolean>(false);
   const closeRef = useRef(onClose);
@@ -201,6 +206,41 @@ export default function ProductFormModal({
       ...previous,
       [field]: value,
     }));
+  }
+
+  async function handleSetPrimary(imageId: string) {
+    if (!product || savingRef.current || changingPrimaryId) {
+      return;
+    }
+
+    const currentImage = existingImages.find(
+      (image) => image.id === imageId,
+    );
+
+    if (!currentImage || currentImage.isPrimary) {
+      return;
+    }
+
+    try {
+      setChangingPrimaryId(imageId);
+      setError('');
+
+      await productsApi.setPrimaryImage(product.id, imageId);
+
+      setExistingImages((previous) =>
+        previous.map((image) => ({
+          ...image,
+          isPrimary: image.id === imageId,
+        })),
+      );
+
+      onPrimaryChange?.();
+
+    } catch (err) {
+      setError(getApiErrorMessage(err));
+    } finally {
+      setChangingPrimaryId(null);
+    }
   }
 
   function handleClose() {
@@ -700,17 +740,26 @@ export default function ProductFormModal({
                           className="aspect-square w-full object-cover"
                         />
 
+
                         <div className="p-2 text-center text-xs">
                           {image.isPrimary ? (
                             <span className="font-semibold text-green-700">
-                              Ảnh đại diện
+                              ✓ Ảnh đại diện
                             </span>
                           ) : (
-                            <span className="text-gray-400">
-                              Ảnh phụ
-                            </span>
+                            <button
+                              type="button"
+                              onClick={() => void handleSetPrimary(image.id)}
+                              disabled={saving || changingPrimaryId !== null}
+                              className="w-full rounded-lg bg-blue-600 px-2 py-2 font-medium text-white transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-50"
+                            >
+                              {changingPrimaryId === image.id
+                                ? 'Đang cập nhật...'
+                                : 'Đặt làm đại diện'}
+                            </button>
                           )}
                         </div>
+
                       </div>
                     ))}
                   </div>

@@ -262,6 +262,9 @@ export default function ProductListPage() {
                 product={editingProduct}
                 onClose={() => setEditingProduct(null)}
                 onSubmit={handleUpdateProduct}
+                onPrimaryChange={() => {
+                    setRefreshKey((value) => value + 1);
+                }}
             />
 
             {/* Page header */}
