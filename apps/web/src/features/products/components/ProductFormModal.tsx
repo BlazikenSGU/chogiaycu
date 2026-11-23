@@ -11,6 +11,7 @@ import {
   Pencil,
   LoaderCircle,
   Save,
+  Trash2,
 } from 'lucide-react';
 
 import { brandsApi } from '../../brands/api/brand.api';
@@ -34,6 +35,7 @@ type ProductFormModalProps = {
   onClose: () => void;
   onSubmit: (data: CreateProductDto, imageFile: File[]) => Promise<void>;
   onPrimaryChange?: (productId: string, imageId: string) => void;
+  onImageDeleted?: (productId: string, imageId: string) => void;
 };
 
 type FormValues = {
@@ -98,6 +100,7 @@ export default function ProductFormModal({
   onClose,
   onSubmit,
   onPrimaryChange,
+  onImageDeleted,
 }: ProductFormModalProps) {
   const isEditing = product !== null;
 
@@ -119,6 +122,9 @@ export default function ProductFormModal({
   const [existingImages, setExistingImages] = useState<ProductImage[]>([]);
 
   const [changingPrimaryId, setChangingPrimaryId] = useState<string | null>(null);
+  const [deletingImageId, setDeletingImageId] = useState<string | null>(null);
+
+  const deletingImageRef = useRef(false);
 
   const savingRef = useRef<boolean>(false);
   const closeRef = useRef(onClose);
@@ -209,7 +215,7 @@ export default function ProductFormModal({
   }
 
   async function handleSetPrimary(imageId: string) {
-    if (!product || savingRef.current || changingPrimaryId) {
+    if (!product || savingRef.current || changingPrimaryId || deletingImageRef.current) {
       return;
     }
 
@@ -240,6 +246,54 @@ export default function ProductFormModal({
       setError(getApiErrorMessage(err));
     } finally {
       setChangingPrimaryId(null);
+    }
+  }
+
+
+  async function handleDeleteImage(imageId: string) {
+    if (
+      !product ||
+      savingRef.current ||
+      changingPrimaryId !== null ||
+      deletingImageRef.current
+    ) {
+      return;
+    }
+
+    const image = existingImages.find(
+      (item) => item.id === imageId,
+    );
+
+    if (!image || image.isPrimary) {
+      return;
+    }
+
+    const confirmed = window.confirm(
+      'Bạn có chắc muốn xóa ảnh này?\n\n' +
+      'Ảnh sẽ bị xóa khỏi sản phẩm và ImageKit. ' +
+      'Thao tác này không thể hoàn tác.',
+    );
+
+    if (!confirmed) return;
+
+    deletingImageRef.current = true;
+    setDeletingImageId(imageId);
+    setError('');
+
+    try {
+      await productsApi.deleteImage(product.id, imageId);
+
+      setExistingImages((previous) =>
+        previous.filter((item) => item.id !== imageId),
+      );
+
+      // Thông báo cho ProductListPage cập nhật sản phẩm.
+      onImageDeleted?.(product.id, imageId);
+    } catch (err) {
+      setError(getApiErrorMessage(err));
+    } finally {
+      deletingImageRef.current = false;
+      setDeletingImageId(null);
     }
   }
 
@@ -734,13 +788,34 @@ export default function ProductFormModal({
                         key={image.id}
                         className="overflow-hidden rounded-xl border border-gray-200"
                       >
-                        <img
-                          src={image.url}
-                          alt={image.alt ?? 'Hình ảnh sản phẩm'}
-                          className="aspect-square w-full object-cover"
-                        />
+                        {/* Vùng ảnh */}
+                        <div className="relative">
+                          <img
+                            src={image.url}
+                            alt={image.alt ?? 'Hình ảnh sản phẩm'}
+                            className="aspect-square w-full object-cover"
+                          />
 
+                          {/* Icon xóa nằm đè trên ảnh */}
+                          {!image.isPrimary && (
+                            <button
+                              type="button"
+                              title="Xóa ảnh"
+                              aria-label="Xóa ảnh"
+                              onClick={() => void handleDeleteImage(image.id)}
+                              disabled={saving || changingPrimaryId !== null || deletingImageId !== null}
+                              className="absolute right-1.5 top-1.5 z-10 flex h-7 w-7 items-center justify-center rounded-lg bg-white/60 text-black-500 shadow-sm backdrop-blur-[2px] transition hover:bg-red-50 hover:text-red-600 disabled:cursor-not-allowed disabled:opacity-50"
+                            >
+                              {deletingImageId === image.id ? (
+                                <LoaderCircle size={15} className="animate-spin" />
+                              ) : (
+                                <Trash2 size={15} strokeWidth={2} />
+                              )}
+                            </button>
+                          )}
+                        </div>
 
+                        {/* Giữ nguyên phần nút Đặt làm đại diện ở dưới ảnh */}
                         <div className="p-2 text-center text-xs">
                           {image.isPrimary ? (
                             <span className="font-semibold text-green-700">
@@ -750,7 +825,7 @@ export default function ProductFormModal({
                             <button
                               type="button"
                               onClick={() => void handleSetPrimary(image.id)}
-                              disabled={saving || changingPrimaryId !== null}
+                              disabled={saving || changingPrimaryId !== null || deletingImageId !== null}
                               className="w-full rounded-lg bg-blue-600 px-2 py-2 font-medium text-white transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-50"
                             >
                               {changingPrimaryId === image.id
@@ -759,7 +834,6 @@ export default function ProductFormModal({
                             </button>
                           )}
                         </div>
-
                       </div>
                     ))}
                   </div>

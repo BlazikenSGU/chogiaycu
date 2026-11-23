@@ -265,6 +265,23 @@ export default function ProductListPage() {
         );
     }
 
+    function handleImageDeleted(productId: string, imageId: string) {
+        setProducts((previous) =>
+            previous.map((product) => {
+                if (product.id !== productId) {
+                    return product;
+                }
+
+                return {
+                    ...product,
+                    images: product.images.filter(
+                        (image) => image.id !== imageId,
+                    ),
+                };
+            }),
+        );
+    }
+
     return (
         <div className="space-y-6">
             <ProductFormModal
@@ -281,6 +298,7 @@ export default function ProductListPage() {
                 onClose={() => setEditingProduct(null)}
                 onSubmit={handleUpdateProduct}
                 onPrimaryChange={handlePrimaryChange}
+                onImageDeleted={handleImageDeleted}
             />
 
             {/* Page header */}
