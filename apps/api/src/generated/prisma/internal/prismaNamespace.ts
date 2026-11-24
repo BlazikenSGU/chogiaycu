@@ -404,7 +404,8 @@ export const ModelName = {
   Product: 'Product',
   ProductImage: 'ProductImage',
   PasswordResetToken: 'PasswordResetToken',
-  AuthRateLimit: 'AuthRateLimit'
+  AuthRateLimit: 'AuthRateLimit',
+  ImageKitCleanupJob: 'ImageKitCleanupJob'
 } as const
 
 export type ModelName = (typeof ModelName)[keyof typeof ModelName]
@@ -420,7 +421,7 @@ export type TypeMap<ExtArgs extends runtime.Types.Extensions.InternalArgs = runt
     omit: GlobalOmitOptions
   }
   meta: {
-    modelProps: "user" | "refreshSession" | "brand" | "category" | "product" | "productImage" | "passwordResetToken" | "authRateLimit"
+    modelProps: "user" | "refreshSession" | "brand" | "category" | "product" | "productImage" | "passwordResetToken" | "authRateLimit" | "imageKitCleanupJob"
     txIsolationLevel: TransactionIsolationLevel
   }
   model: {
@@ -1016,6 +1017,80 @@ export type TypeMap<ExtArgs extends runtime.Types.Extensions.InternalArgs = runt
         }
       }
     }
+    ImageKitCleanupJob: {
+      payload: Prisma.$ImageKitCleanupJobPayload<ExtArgs>
+      fields: Prisma.ImageKitCleanupJobFieldRefs
+      operations: {
+        findUnique: {
+          args: Prisma.ImageKitCleanupJobFindUniqueArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ImageKitCleanupJobPayload> | null
+        }
+        findUniqueOrThrow: {
+          args: Prisma.ImageKitCleanupJobFindUniqueOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ImageKitCleanupJobPayload>
+        }
+        findFirst: {
+          args: Prisma.ImageKitCleanupJobFindFirstArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ImageKitCleanupJobPayload> | null
+        }
+        findFirstOrThrow: {
+          args: Prisma.ImageKitCleanupJobFindFirstOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ImageKitCleanupJobPayload>
+        }
+        findMany: {
+          args: Prisma.ImageKitCleanupJobFindManyArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ImageKitCleanupJobPayload>[]
+        }
+        create: {
+          args: Prisma.ImageKitCleanupJobCreateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ImageKitCleanupJobPayload>
+        }
+        createMany: {
+          args: Prisma.ImageKitCleanupJobCreateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        createManyAndReturn: {
+          args: Prisma.ImageKitCleanupJobCreateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ImageKitCleanupJobPayload>[]
+        }
+        delete: {
+          args: Prisma.ImageKitCleanupJobDeleteArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ImageKitCleanupJobPayload>
+        }
+        update: {
+          args: Prisma.ImageKitCleanupJobUpdateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ImageKitCleanupJobPayload>
+        }
+        deleteMany: {
+          args: Prisma.ImageKitCleanupJobDeleteManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateMany: {
+          args: Prisma.ImageKitCleanupJobUpdateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateManyAndReturn: {
+          args: Prisma.ImageKitCleanupJobUpdateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ImageKitCleanupJobPayload>[]
+        }
+        upsert: {
+          args: Prisma.ImageKitCleanupJobUpsertArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ImageKitCleanupJobPayload>
+        }
+        aggregate: {
+          args: Prisma.ImageKitCleanupJobAggregateArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.AggregateImageKitCleanupJob>
+        }
+        groupBy: {
+          args: Prisma.ImageKitCleanupJobGroupByArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.ImageKitCleanupJobGroupByOutputType>[]
+        }
+        count: {
+          args: Prisma.ImageKitCleanupJobCountArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.ImageKitCleanupJobCountAggregateOutputType> | number
+        }
+      }
+    }
   }
 } & {
   other: {
@@ -1166,6 +1241,28 @@ export const AuthRateLimitScalarFieldEnum = {
 export type AuthRateLimitScalarFieldEnum = (typeof AuthRateLimitScalarFieldEnum)[keyof typeof AuthRateLimitScalarFieldEnum]
 
 
+export const ImageKitCleanupJobScalarFieldEnum = {
+  id: 'id',
+  deduplicationKey: 'deduplicationKey',
+  type: 'type',
+  status: 'status',
+  productId: 'productId',
+  fileId: 'fileId',
+  attempts: 'attempts',
+  maxAttempts: 'maxAttempts',
+  nextAttemptAt: 'nextAttemptAt',
+  lastAttemptAt: 'lastAttemptAt',
+  lastError: 'lastError',
+  lockedAt: 'lockedAt',
+  lockToken: 'lockToken',
+  completedAt: 'completedAt',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+} as const
+
+export type ImageKitCleanupJobScalarFieldEnum = (typeof ImageKitCleanupJobScalarFieldEnum)[keyof typeof ImageKitCleanupJobScalarFieldEnum]
+
+
 export const SortOrder = {
   asc: 'asc',
   desc: 'desc'
@@ -1270,6 +1367,34 @@ export type EnumProductStatusFieldRefInput<$PrismaModel> = FieldRefInputType<$Pr
  * Reference to a field of type 'ProductStatus[]'
  */
 export type ListEnumProductStatusFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'ProductStatus[]'>
+    
+
+
+/**
+ * Reference to a field of type 'ImageKitCleanupType'
+ */
+export type EnumImageKitCleanupTypeFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'ImageKitCleanupType'>
+    
+
+
+/**
+ * Reference to a field of type 'ImageKitCleanupType[]'
+ */
+export type ListEnumImageKitCleanupTypeFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'ImageKitCleanupType[]'>
+    
+
+
+/**
+ * Reference to a field of type 'ImageKitCleanupStatus'
+ */
+export type EnumImageKitCleanupStatusFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'ImageKitCleanupStatus'>
+    
+
+
+/**
+ * Reference to a field of type 'ImageKitCleanupStatus[]'
+ */
+export type ListEnumImageKitCleanupStatusFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'ImageKitCleanupStatus[]'>
     
 
 
@@ -1445,6 +1570,7 @@ export type GlobalOmitConfig = {
   productImage?: Prisma.ProductImageOmit
   passwordResetToken?: Prisma.PasswordResetTokenOmit
   authRateLimit?: Prisma.AuthRateLimitOmit
+  imageKitCleanupJob?: Prisma.ImageKitCleanupJobOmit
 }
 
 /* Types for Logging */

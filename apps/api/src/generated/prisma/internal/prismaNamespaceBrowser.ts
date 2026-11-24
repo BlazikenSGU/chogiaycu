@@ -58,7 +58,8 @@ export const ModelName = {
   Product: 'Product',
   ProductImage: 'ProductImage',
   PasswordResetToken: 'PasswordResetToken',
-  AuthRateLimit: 'AuthRateLimit'
+  AuthRateLimit: 'AuthRateLimit',
+  ImageKitCleanupJob: 'ImageKitCleanupJob'
 } as const
 
 export type ModelName = (typeof ModelName)[keyof typeof ModelName]
@@ -186,6 +187,28 @@ export const AuthRateLimitScalarFieldEnum = {
 } as const
 
 export type AuthRateLimitScalarFieldEnum = (typeof AuthRateLimitScalarFieldEnum)[keyof typeof AuthRateLimitScalarFieldEnum]
+
+
+export const ImageKitCleanupJobScalarFieldEnum = {
+  id: 'id',
+  deduplicationKey: 'deduplicationKey',
+  type: 'type',
+  status: 'status',
+  productId: 'productId',
+  fileId: 'fileId',
+  attempts: 'attempts',
+  maxAttempts: 'maxAttempts',
+  nextAttemptAt: 'nextAttemptAt',
+  lastAttemptAt: 'lastAttemptAt',
+  lastError: 'lastError',
+  lockedAt: 'lockedAt',
+  lockToken: 'lockToken',
+  completedAt: 'completedAt',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+} as const
+
+export type ImageKitCleanupJobScalarFieldEnum = (typeof ImageKitCleanupJobScalarFieldEnum)[keyof typeof ImageKitCleanupJobScalarFieldEnum]
 
 
 export const SortOrder = {

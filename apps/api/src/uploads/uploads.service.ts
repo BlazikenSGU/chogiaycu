@@ -9,12 +9,14 @@ import {
 
 import { PrismaService } from '../prisma/prisma.service.js';
 import { ImageKitStorageService } from './imagekit-storage.service.js';
+import { ImageKitCleanupService } from './imagekit-cleanup.service.js';
 
 @Injectable()
 export class UploadsService {
     constructor(
         private readonly prisma: PrismaService,
         private readonly imageKitStorage: ImageKitStorageService,
+        private readonly imageKitCleanup: ImageKitCleanupService,
     ) { }
 
     private async getProduct(productId: string) {
@@ -305,18 +307,10 @@ export class UploadsService {
         });
     }
 
-
-    async remove(
-        productId: string,
-        imageId: string,
-    ) {
-        const image = await this.prisma.$transaction(async (tx) => {
-            // 1. Khóa sản phẩm, đồng bộ với setPrimary().
-            const locked = await tx.$queryRaw<
-                Array<{ id: string }>
-            >`
-            SELECT id
-            FROM products
+    async remove(productId: string, imageId: string) {
+        await this.prisma.$transaction(async (tx) => {
+            const locked = await tx.$queryRaw<Array<{ id: string }>>`
+            SELECT id FROM products
             WHERE id = ${productId}
             FOR UPDATE
         `;
@@ -327,7 +321,6 @@ export class UploadsService {
                 );
             }
 
-            // 2. Kiểm tra ảnh thuộc sản phẩm.
             const currentImage = await tx.productImage.findFirst({
                 where: {
                     id: imageId,
@@ -341,39 +334,29 @@ export class UploadsService {
                 );
             }
 
-            // 3. Không cho xóa ảnh đại diện.
             if (currentImage.isPrimary) {
                 throw new ConflictException(
                     'Không thể xóa ảnh đại diện. Vui lòng chọn ảnh khác làm đại diện trước.',
                 );
             }
 
-            // 4. Chỉ xóa bản ghi ảnh phụ.
             await tx.productImage.delete({
-                where: { id: imageId },
+                where: {
+                    id: imageId,
+                },
             });
 
-            return currentImage;
+            await this.imageKitCleanup.enqueueDeleteFile(
+                productId,
+                currentImage.fileId,
+                tx,
+            );
         });
-
-        // 5. Xóa file ImageKit sau khi transaction thành công.
-        try {
-            await this.imageKitStorage.delete(image.fileId);
-        } catch (error) {
-            console.error(
-                '[ImageKit cleanup] Không thể xóa file:',
-                image.fileId,
-                error,
-            );
-
-            throw new BadGatewayException(
-                'Đã xóa ảnh khỏi sản phẩm nhưng chưa thể xóa file trên ImageKit. Cần kiểm tra và dọn dẹp file.',
-            );
-        }
 
         return {
             message: 'Đã xóa ảnh thành công',
         };
     }
+
 
 }

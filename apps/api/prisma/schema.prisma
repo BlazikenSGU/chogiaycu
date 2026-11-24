@@ -147,3 +147,47 @@ model AuthRateLimit {
   @@index([lastAttempt])
   @@map("auth_rate_limits")
 }
+
+enum ImageKitCleanupStatus {
+  PENDING
+  PROCESSING
+  COMPLETED
+  FAILED
+}
+
+enum ImageKitCleanupType {
+  DELETE_FILE
+  DELETE_FOLDER
+}
+
+model ImageKitCleanupJob {
+  id               String @id @default(uuid())
+  deduplicationKey String @unique
+
+  type   ImageKitCleanupType
+  status ImageKitCleanupStatus @default(PENDING)
+
+  productId String
+  fileId    String?
+
+  attempts    Int @default(0)
+  maxAttempts Int @default(5)
+
+  nextAttemptAt DateTime  @default(now())
+  lastAttemptAt DateTime?
+  lastError     String?   @db.Text
+
+  lockedAt  DateTime?
+  lockToken String?
+
+  completedAt DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([status, nextAttemptAt])
+  @@index([status, lockedAt])
+  @@index([productId])
+  @@index([fileId])
+  @@map("imagekit_cleanup_jobs")
+}
