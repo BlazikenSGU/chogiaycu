@@ -122,12 +122,23 @@ export default function ProductFormModal({
   const [existingImages, setExistingImages] = useState<ProductImage[]>([]);
 
   const [changingPrimaryId, setChangingPrimaryId] = useState<string | null>(null);
+  const changingPrimaryRef = useRef(false);
   const [deletingImageId, setDeletingImageId] = useState<string | null>(null);
 
   const deletingImageRef = useRef(false);
 
   const savingRef = useRef<boolean>(false);
   const closeRef = useRef(onClose);
+
+  const isBusy = saving || deletingImageId !== null || changingPrimaryId !== null;
+
+  function isOperationInProgress() {
+    return (
+      savingRef.current ||
+      deletingImageRef.current ||
+      changingPrimaryRef.current
+    );
+  }
 
   useEffect(() => {
     closeRef.current = onClose;
@@ -183,7 +194,6 @@ export default function ProductFormModal({
     };
   }, [open]);
 
-  // Escape key and background scroll lock.
   useEffect(() => {
     if (!open) return;
 
@@ -191,7 +201,12 @@ export default function ProductFormModal({
     document.body.style.overflow = 'hidden';
 
     function handleKeyDown(event: KeyboardEvent) {
-      if (event.key === 'Escape' && !savingRef.current) {
+      if (
+        event.key === 'Escape' &&
+        !savingRef.current &&
+        !deletingImageRef.current &&
+        !changingPrimaryRef.current
+      ) {
         closeRef.current();
       }
     }
@@ -215,7 +230,7 @@ export default function ProductFormModal({
   }
 
   async function handleSetPrimary(imageId: string) {
-    if (!product || savingRef.current || changingPrimaryId || deletingImageRef.current) {
+    if (!product || isOperationInProgress()) {
       return;
     }
 
@@ -226,6 +241,8 @@ export default function ProductFormModal({
     if (!currentImage || currentImage.isPrimary) {
       return;
     }
+
+    changingPrimaryRef.current = true;
 
     try {
       setChangingPrimaryId(imageId);
@@ -241,22 +258,17 @@ export default function ProductFormModal({
       );
 
       onPrimaryChange?.(product.id, imageId);
-
     } catch (err) {
       setError(getApiErrorMessage(err));
     } finally {
+      changingPrimaryRef.current = false;
       setChangingPrimaryId(null);
     }
   }
 
 
   async function handleDeleteImage(imageId: string) {
-    if (
-      !product ||
-      savingRef.current ||
-      changingPrimaryId !== null ||
-      deletingImageRef.current
-    ) {
+    if (!product || isOperationInProgress()) {
       return;
     }
 
@@ -298,14 +310,13 @@ export default function ProductFormModal({
   }
 
   function handleClose() {
-    if (savingRef.current) return;
+    if (isOperationInProgress()) return;
     onClose();
   }
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-
-    if (savingRef.current) return;
+    if (isOperationInProgress()) return;
 
     setError('');
 
@@ -455,7 +466,7 @@ export default function ProductFormModal({
           <button
             type="button"
             onClick={handleClose}
-            disabled={saving}
+            disabled={isBusy}
             aria-label="Đóng cửa sổ"
             className="rounded-lg p-2 text-gray-500 hover:bg-gray-100 disabled:opacity-40"
           >
@@ -507,7 +518,7 @@ export default function ProductFormModal({
                   <input
                     required
                     maxLength={200}
-                    disabled={saving}
+                    disabled={isBusy}
                     value={values.name}
                     onChange={(event) => {
                       const name = event.target.value;
@@ -530,7 +541,7 @@ export default function ProductFormModal({
                   <input
                     required
                     maxLength={220}
-                    disabled={saving}
+                    disabled={isBusy}
                     value={values.slug}
                     onChange={(event) =>
                       setField('slug', event.target.value)
@@ -550,7 +561,7 @@ export default function ProductFormModal({
                   <select
                     required
                     value={values.brandId}
-                    disabled={saving || optionsLoading}
+                    disabled={isBusy || optionsLoading}
                     onChange={(event) =>
                       setField('brandId', event.target.value)
                     }
@@ -572,7 +583,7 @@ export default function ProductFormModal({
                   <select
                     required
                     value={values.categoryId}
-                    disabled={saving || optionsLoading}
+                    disabled={isBusy || optionsLoading}
                     onChange={(event) =>
                       setField('categoryId', event.target.value)
                     }
@@ -610,7 +621,7 @@ export default function ProductFormModal({
                     type="number"
                     min="0"
                     step="1"
-                    disabled={saving}
+                    disabled={isBusy}
                     value={values.price}
                     onChange={(event) =>
                       setField('price', event.target.value)
@@ -627,7 +638,7 @@ export default function ProductFormModal({
                     type="number"
                     min="0"
                     step="1"
-                    disabled={saving}
+                    disabled={isBusy}
                     value={values.originalPrice}
                     onChange={(event) =>
                       setField('originalPrice', event.target.value)
@@ -641,7 +652,7 @@ export default function ProductFormModal({
                   <input
                     required
                     maxLength={20}
-                    disabled={saving}
+                    disabled={isBusy}
                     value={values.size}
                     onChange={(event) =>
                       setField('size', event.target.value)
@@ -660,7 +671,7 @@ export default function ProductFormModal({
                     min="0"
                     max="100"
                     step="1"
-                    disabled={saving}
+                    disabled={isBusy}
                     value={values.conditionPercent}
                     onChange={(event) =>
                       setField('conditionPercent', event.target.value)
@@ -679,7 +690,7 @@ export default function ProductFormModal({
                     type="number"
                     min="0"
                     step="1"
-                    disabled={saving}
+                    disabled={isBusy}
                     value={values.stock}
                     onChange={(event) =>
                       setField('stock', event.target.value)
@@ -694,7 +705,7 @@ export default function ProductFormModal({
                   </span>
                   <select
                     value={values.status}
-                    disabled={saving}
+                    disabled={isBusy}
                     onChange={(event) =>
                       setField(
                         'status',
@@ -738,7 +749,7 @@ export default function ProductFormModal({
                   </span>
                   <textarea
                     rows={4}
-                    disabled={saving}
+                    disabled={isBusy}
                     value={values.description}
                     onChange={(event) =>
                       setField('description', event.target.value)
@@ -754,7 +765,7 @@ export default function ProductFormModal({
                   </span>
                   <textarea
                     rows={3}
-                    disabled={saving}
+                    disabled={isBusy}
                     value={values.conditionNote}
                     onChange={(event) =>
                       setField('conditionNote', event.target.value)
@@ -803,7 +814,7 @@ export default function ProductFormModal({
                               title="Xóa ảnh"
                               aria-label="Xóa ảnh"
                               onClick={() => void handleDeleteImage(image.id)}
-                              disabled={saving || changingPrimaryId !== null || deletingImageId !== null}
+                              disabled={isBusy}
                               className="absolute right-1.5 top-1.5 z-10 flex h-7 w-7 items-center justify-center rounded-lg bg-white/60 text-black-500 shadow-sm backdrop-blur-[2px] transition hover:bg-red-50 hover:text-red-600 disabled:cursor-not-allowed disabled:opacity-50"
                             >
                               {deletingImageId === image.id ? (
@@ -825,7 +836,7 @@ export default function ProductFormModal({
                             <button
                               type="button"
                               onClick={() => void handleSetPrimary(image.id)}
-                              disabled={saving || changingPrimaryId !== null || deletingImageId !== null}
+                              disabled={isBusy}
                               className="w-full rounded-lg bg-blue-600 px-2 py-2 font-medium text-white transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-50"
                             >
                               {changingPrimaryId === image.id
@@ -845,7 +856,7 @@ export default function ProductFormModal({
               <ProductImageUploader
                 files={selectedImages}
                 onChange={setSelectedImages}
-                disabled={saving}
+                disabled={isBusy}
                 maxImages={6 - (isEditing ? existingImages.length : 0)}
               />
             )}
@@ -856,7 +867,7 @@ export default function ProductFormModal({
             <button
               type="button"
               onClick={handleClose}
-              disabled={saving}
+              disabled={isBusy}
               className="rounded-xl border border-gray-200 px-5 py-2.5 text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50"
             >
               Hủy
@@ -865,7 +876,7 @@ export default function ProductFormModal({
             <button
               type="submit"
               disabled={
-                saving ||
+                isBusy ||
                 optionsLoading ||
                 Boolean(optionsError) ||
                 brands.length === 0 ||

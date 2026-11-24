@@ -144,6 +144,16 @@ export default function ProductListPage() {
                 });
 
                 if (!cancelled) {
+                    const lastValidPage = Math.max(
+                        1,
+                        result.meta.totalPages,
+                    );
+
+                    if(page > lastValidPage){
+                        setPage(lastValidPage);
+                        return;
+                    }
+
                     setProducts(result.data);
                     setMeta(result.meta);
                 }
@@ -195,18 +205,65 @@ export default function ProductListPage() {
 
         // Chỉ đóng modal khi backend trả về thành công.
         setCreateModalOpen(false);
-
-        // Quay về trang đầu và tải lại danh sách sản phẩm.
         setPage(1);
         setRefreshKey((value) => value + 1);
     }
 
+    function shouldRefreshAfterUpdate(
+        previousProduct: Product,
+        updatedProduct: Product,
+    ): boolean {
+        if (
+            status &&
+            previousProduct.status !== updatedProduct.status
+        ) {
+            return true;
+        }
+
+        if (
+            brandId &&
+            previousProduct.brandId !== updatedProduct.brandId
+        ) {
+            return true;
+        }
+
+        if (
+            categoryId &&
+            previousProduct.categoryId !== updatedProduct.categoryId
+        ) {
+            return true;
+        }
+
+        if (
+            debouncedSearch &&
+            (
+                previousProduct.name !== updatedProduct.name ||
+                previousProduct.slug !== updatedProduct.slug
+            )
+        ) {
+            return true;
+        }
+
+        if (
+            (
+                sort === ProductSort.PRICE_ASC ||
+                sort === ProductSort.PRICE_DESC
+            ) &&
+            Number(previousProduct.price) !==
+            Number(updatedProduct.price)
+        ) {
+            return true;
+        }
+
+        return false;
+    }
 
     async function handleUpdateProduct(
         data: UpdateProductDto,
         images: File[],
     ) {
         if (!editingProduct) return;
+        const previousProduct = editingProduct;
 
         const productId = editingProduct.id;
         const uploadedImageIds: string[] = [];
@@ -224,7 +281,24 @@ export default function ProductListPage() {
                 );
             }
 
-            await productsApi.update(productId, data);
+            const updatedProduct = await productsApi.update(productId, data);
+
+            if (
+                shouldRefreshAfterUpdate(
+                    previousProduct,
+                    updatedProduct,
+                )
+            ) {
+                setRefreshKey((value) => value + 1);
+            } else {
+                setProducts((previous) =>
+                    previous.map((product) =>
+                        product.id === productId
+                            ? updatedProduct
+                            : product,
+                    ),
+                );
+            }
         } catch (error) {
             const cleanupResults = await Promise.allSettled(
                 uploadedImageIds.map((imageId) =>
@@ -247,23 +321,6 @@ export default function ProductListPage() {
 
             throw error;
         }
-
-        // Chỉ GET lại sản phẩm vừa cập nhật.
-        try {
-            const updatedProduct =
-                await productsApi.getById(productId);
-
-            setProducts((previous) =>
-                previous.map((product) =>
-                    product.id === productId
-                        ? updatedProduct
-                        : product,
-                ),
-            );
-        } catch {
-            setRefreshKey((value) => value + 1);
-        }
-
         setEditingProduct(null);
     }
 
