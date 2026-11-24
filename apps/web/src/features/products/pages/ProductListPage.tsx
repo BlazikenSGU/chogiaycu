@@ -186,9 +186,12 @@ export default function ProductListPage() {
             );
         }
 
-        // Một request duy nhất:
-        // Backend xử lý upload song song và Prisma transaction.
-        await productsApi.createWithImages(data, images);
+        if (images.length === 0) {
+            await productsApi.create(data);
+        } else {
+            // Backend xử lý upload song song và Prisma transaction.
+            await productsApi.createWithImages(data, images);
+        }
 
         // Chỉ đóng modal khi backend trả về thành công.
         setCreateModalOpen(false);

@@ -1,4 +1,5 @@
 import api from '../../../lib/api';
+import { prepareProductImage } from './prepare-product-image';
 
 import type {
     Product,
@@ -10,6 +11,8 @@ import type {
 } from '../types/product.types';
 
 const productPath = (id: string) => `/products/${encodeURIComponent(id)}`;
+// ImageKit uploads and a cold production API can take longer than the default 15 seconds.
+const imageUploadTimeout = 120_000;
 const imagePath = (
     productId: string,
     imageId: string,
@@ -70,13 +73,14 @@ export const productsApi = {
         const formData = new FormData();
         formData.append('payload', JSON.stringify(data));
 
-        for (const image of images) {
+        for (const image of await Promise.all(images.map(prepareProductImage))) {
             formData.append('images', image);
         }
 
         const response = await api.post<Product>(
             '/products/with-images',
             formData,
+            { timeout: imageUploadTimeout },
         );
 
         return response.data;
@@ -97,11 +101,12 @@ export const productsApi = {
 
     async uploadImage(productId: string, file: File) {
         const formData = new FormData();
-        formData.append('file', file);
+        formData.append('file', await prepareProductImage(file));
 
         const response = await api.post<ProductImage>(
             `${productPath(productId)}/images`,
             formData,
+            { timeout: imageUploadTimeout },
         );
 
         return response.data;
@@ -123,13 +128,14 @@ export const productsApi = {
 
         const formData = new FormData();
 
-        for (const image of images) {
+        for (const image of await Promise.all(images.map(prepareProductImage))) {
             formData.append('images', image);
         }
 
         const response = await api.post<ProductImage[]>(
             `${productPath(productId)}/images/batch`,
             formData,
+            { timeout: imageUploadTimeout },
         );
 
         return response.data;
