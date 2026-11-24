@@ -236,6 +236,40 @@ export type EnumProductStatusWithAggregatesFilter<$PrismaModel = never> = {
   _max?: Prisma.NestedEnumProductStatusFilter<$PrismaModel>
 }
 
+export type EnumImageKitCleanupTypeFilter<$PrismaModel = never> = {
+  equals?: $Enums.ImageKitCleanupType | Prisma.EnumImageKitCleanupTypeFieldRefInput<$PrismaModel>
+  in?: $Enums.ImageKitCleanupType[] | Prisma.ListEnumImageKitCleanupTypeFieldRefInput<$PrismaModel>
+  notIn?: $Enums.ImageKitCleanupType[] | Prisma.ListEnumImageKitCleanupTypeFieldRefInput<$PrismaModel>
+  not?: Prisma.NestedEnumImageKitCleanupTypeFilter<$PrismaModel> | $Enums.ImageKitCleanupType
+}
+
+export type EnumImageKitCleanupStatusFilter<$PrismaModel = never> = {
+  equals?: $Enums.ImageKitCleanupStatus | Prisma.EnumImageKitCleanupStatusFieldRefInput<$PrismaModel>
+  in?: $Enums.ImageKitCleanupStatus[] | Prisma.ListEnumImageKitCleanupStatusFieldRefInput<$PrismaModel>
+  notIn?: $Enums.ImageKitCleanupStatus[] | Prisma.ListEnumImageKitCleanupStatusFieldRefInput<$PrismaModel>
+  not?: Prisma.NestedEnumImageKitCleanupStatusFilter<$PrismaModel> | $Enums.ImageKitCleanupStatus
+}
+
+export type EnumImageKitCleanupTypeWithAggregatesFilter<$PrismaModel = never> = {
+  equals?: $Enums.ImageKitCleanupType | Prisma.EnumImageKitCleanupTypeFieldRefInput<$PrismaModel>
+  in?: $Enums.ImageKitCleanupType[] | Prisma.ListEnumImageKitCleanupTypeFieldRefInput<$PrismaModel>
+  notIn?: $Enums.ImageKitCleanupType[] | Prisma.ListEnumImageKitCleanupTypeFieldRefInput<$PrismaModel>
+  not?: Prisma.NestedEnumImageKitCleanupTypeWithAggregatesFilter<$PrismaModel> | $Enums.ImageKitCleanupType
+  _count?: Prisma.NestedIntFilter<$PrismaModel>
+  _min?: Prisma.NestedEnumImageKitCleanupTypeFilter<$PrismaModel>
+  _max?: Prisma.NestedEnumImageKitCleanupTypeFilter<$PrismaModel>
+}
+
+export type EnumImageKitCleanupStatusWithAggregatesFilter<$PrismaModel = never> = {
+  equals?: $Enums.ImageKitCleanupStatus | Prisma.EnumImageKitCleanupStatusFieldRefInput<$PrismaModel>
+  in?: $Enums.ImageKitCleanupStatus[] | Prisma.ListEnumImageKitCleanupStatusFieldRefInput<$PrismaModel>
+  notIn?: $Enums.ImageKitCleanupStatus[] | Prisma.ListEnumImageKitCleanupStatusFieldRefInput<$PrismaModel>
+  not?: Prisma.NestedEnumImageKitCleanupStatusWithAggregatesFilter<$PrismaModel> | $Enums.ImageKitCleanupStatus
+  _count?: Prisma.NestedIntFilter<$PrismaModel>
+  _min?: Prisma.NestedEnumImageKitCleanupStatusFilter<$PrismaModel>
+  _max?: Prisma.NestedEnumImageKitCleanupStatusFilter<$PrismaModel>
+}
+
 export type NestedStringFilter<$PrismaModel = never> = {
   equals?: string | Prisma.StringFieldRefInput<$PrismaModel>
   in?: string[] | Prisma.ListStringFieldRefInput<$PrismaModel>
@@ -469,6 +503,40 @@ export type NestedEnumProductStatusWithAggregatesFilter<$PrismaModel = never> = 
   _count?: Prisma.NestedIntFilter<$PrismaModel>
   _min?: Prisma.NestedEnumProductStatusFilter<$PrismaModel>
   _max?: Prisma.NestedEnumProductStatusFilter<$PrismaModel>
+}
+
+export type NestedEnumImageKitCleanupTypeFilter<$PrismaModel = never> = {
+  equals?: $Enums.ImageKitCleanupType | Prisma.EnumImageKitCleanupTypeFieldRefInput<$PrismaModel>
+  in?: $Enums.ImageKitCleanupType[] | Prisma.ListEnumImageKitCleanupTypeFieldRefInput<$PrismaModel>
+  notIn?: $Enums.ImageKitCleanupType[] | Prisma.ListEnumImageKitCleanupTypeFieldRefInput<$PrismaModel>
+  not?: Prisma.NestedEnumImageKitCleanupTypeFilter<$PrismaModel> | $Enums.ImageKitCleanupType
+}
+
+export type NestedEnumImageKitCleanupStatusFilter<$PrismaModel = never> = {
+  equals?: $Enums.ImageKitCleanupStatus | Prisma.EnumImageKitCleanupStatusFieldRefInput<$PrismaModel>
+  in?: $Enums.ImageKitCleanupStatus[] | Prisma.ListEnumImageKitCleanupStatusFieldRefInput<$PrismaModel>
+  notIn?: $Enums.ImageKitCleanupStatus[] | Prisma.ListEnumImageKitCleanupStatusFieldRefInput<$PrismaModel>
+  not?: Prisma.NestedEnumImageKitCleanupStatusFilter<$PrismaModel> | $Enums.ImageKitCleanupStatus
+}
+
+export type NestedEnumImageKitCleanupTypeWithAggregatesFilter<$PrismaModel = never> = {
+  equals?: $Enums.ImageKitCleanupType | Prisma.EnumImageKitCleanupTypeFieldRefInput<$PrismaModel>
+  in?: $Enums.ImageKitCleanupType[] | Prisma.ListEnumImageKitCleanupTypeFieldRefInput<$PrismaModel>
+  notIn?: $Enums.ImageKitCleanupType[] | Prisma.ListEnumImageKitCleanupTypeFieldRefInput<$PrismaModel>
+  not?: Prisma.NestedEnumImageKitCleanupTypeWithAggregatesFilter<$PrismaModel> | $Enums.ImageKitCleanupType
+  _count?: Prisma.NestedIntFilter<$PrismaModel>
+  _min?: Prisma.NestedEnumImageKitCleanupTypeFilter<$PrismaModel>
+  _max?: Prisma.NestedEnumImageKitCleanupTypeFilter<$PrismaModel>
+}
+
+export type NestedEnumImageKitCleanupStatusWithAggregatesFilter<$PrismaModel = never> = {
+  equals?: $Enums.ImageKitCleanupStatus | Prisma.EnumImageKitCleanupStatusFieldRefInput<$PrismaModel>
+  in?: $Enums.ImageKitCleanupStatus[] | Prisma.ListEnumImageKitCleanupStatusFieldRefInput<$PrismaModel>
+  notIn?: $Enums.ImageKitCleanupStatus[] | Prisma.ListEnumImageKitCleanupStatusFieldRefInput<$PrismaModel>
+  not?: Prisma.NestedEnumImageKitCleanupStatusWithAggregatesFilter<$PrismaModel> | $Enums.ImageKitCleanupStatus
+  _count?: Prisma.NestedIntFilter<$PrismaModel>
+  _min?: Prisma.NestedEnumImageKitCleanupStatusFilter<$PrismaModel>
+  _max?: Prisma.NestedEnumImageKitCleanupStatusFilter<$PrismaModel>
 }
 
 

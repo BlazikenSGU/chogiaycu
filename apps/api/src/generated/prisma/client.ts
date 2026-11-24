@@ -81,3 +81,8 @@ export type PasswordResetToken = Prisma.PasswordResetTokenModel
  * 
  */
 export type AuthRateLimit = Prisma.AuthRateLimitModel
+/**
+ * Model ImageKitCleanupJob
+ * 
+ */
+export type ImageKitCleanupJob = Prisma.ImageKitCleanupJobModel

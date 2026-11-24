@@ -25,3 +25,21 @@ export const ProductStatus = {
 } as const
 
 export type ProductStatus = (typeof ProductStatus)[keyof typeof ProductStatus]
+
+
+export const ImageKitCleanupStatus = {
+  PENDING: 'PENDING',
+  PROCESSING: 'PROCESSING',
+  COMPLETED: 'COMPLETED',
+  FAILED: 'FAILED'
+} as const
+
+export type ImageKitCleanupStatus = (typeof ImageKitCleanupStatus)[keyof typeof ImageKitCleanupStatus]
+
+
+export const ImageKitCleanupType = {
+  DELETE_FILE: 'DELETE_FILE',
+  DELETE_FOLDER: 'DELETE_FOLDER'
+} as const
+
+export type ImageKitCleanupType = (typeof ImageKitCleanupType)[keyof typeof ImageKitCleanupType]

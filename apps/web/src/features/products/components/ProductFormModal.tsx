@@ -281,9 +281,7 @@ export default function ProductFormModal({
     }
 
     const confirmed = window.confirm(
-      'Bạn có chắc muốn xóa ảnh này?\n\n' +
-      'Ảnh sẽ bị xóa khỏi sản phẩm và ImageKit. ' +
-      'Thao tác này không thể hoàn tác.',
+      'Ảnh sẽ bị xóa khỏi sản phẩm. File trên ImageKit sẽ được dọn dẹp tự động. Thao tác này không thể hoàn tác.',
     );
 
     if (!confirmed) return;
