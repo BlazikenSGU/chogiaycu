@@ -11,12 +11,14 @@ import {
 import { SortOrder } from '../generated/prisma/internal/prismaNamespace.js';
 import { randomUUID } from 'node:crypto';
 import { ImageKitStorageService } from '../uploads/imagekit-storage.service.js';
+import { ImageKitCleanupService } from '../uploads/imagekit-cleanup.service.js';
 
 @Injectable()
 export class ProductsService {
     constructor(
         private readonly prisma: PrismaService,
         private readonly imageKitStorage: ImageKitStorageService,
+        private readonly imageKitCleanup: ImageKitCleanupService
     ) { }
 
     private readonly logger = new Logger(ProductsService.name);
@@ -435,21 +437,33 @@ export class ProductsService {
     }
 
     async remove(id: string) {
-        const product = await this.findById(id);
-
-        if (product.images.length > 0) {
-            throw new ConflictException(
-                'Hãy xóa ảnh trên ImageKit trước khi xóa sản phẩm',
-            );
-        }
-
         try {
-            await this.prisma.product.delete({
-                where: { id },
+            await this.prisma.$transaction(async (tx) => {
+                const locked = await tx.$queryRaw<
+                    Array<{ id: string }>
+                >`
+                    SELECT id
+                    FROM products
+                    WHERE id = ${id}
+                    FOR UPDATE
+                `;
+
+                if (locked.length === 0) {
+                    throw new NotFoundException(
+                        'Không tìm thấy sản phẩm',
+                    );
+                }
+
+                await this.imageKitCleanup.enqueueDeleteFolder(id, tx);
+
+                await tx.product.delete({
+                    where: { id },
+                });
             });
 
+
             return {
-                message: 'Đã xóa sản phẩm thành công',
+                message: 'Đã xóa ảnh thành công',
             };
         } catch (error) {
             this.handlePrismaError(error);

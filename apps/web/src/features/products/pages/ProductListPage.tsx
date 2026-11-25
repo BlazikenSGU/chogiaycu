@@ -10,6 +10,7 @@ import {
     ChevronRight,
     ImageOff,
     RotateCcw,
+    Trash2,
 } from 'lucide-react';
 
 import { productsApi } from '../api/product.api';
@@ -27,7 +28,9 @@ import type { Brand } from '../../brands/types/brand.types';
 import type { Category } from '../../categories/types/category.types';
 
 import ProductFormModal from '../components/ProductFormModal';
+import ProductDeleteModal from '../components/ProductDeleteModal';
 import type { CreateProductDto, UpdateProductDto } from '../types/product.types';
+
 
 const statusLabels: Record<ProductStatus, string> = {
     DRAFT: 'Bản nháp',
@@ -70,6 +73,19 @@ export default function ProductListPage() {
 
     const [createModalOpen, setCreateModalOpen] = useState<boolean>(false);
     const [editingProduct, setEditingProduct] = useState<Product | null>(null);
+
+    const [deletingProduct, setDeletingProduct] =
+        useState<Product | null>(null);
+
+    const [deleting, setDeleting] =
+        useState<boolean>(false);
+
+    const [deleteError, setDeleteError] =
+        useState<string>('');
+
+    const [successMessage, setSuccessMessage] =
+        useState<string>('');
+
     const [sort, setSort] = useState<ProductSort>(
         ProductSort.NEWEST,
     );
@@ -149,7 +165,7 @@ export default function ProductListPage() {
                         result.meta.totalPages,
                     );
 
-                    if(page > lastValidPage){
+                    if (page > lastValidPage) {
                         setPage(lastValidPage);
                         return;
                     }
@@ -177,6 +193,16 @@ export default function ProductListPage() {
         };
     }, [page, debouncedSearch, status, brandId, categoryId, sort, refreshKey]);
 
+    useEffect(() => {
+        if (!successMessage) return;
+
+        const timer = setTimeout(() => {
+            setSuccessMessage('');
+        }, 4000);
+
+        return () => clearTimeout(timer);
+    }, [successMessage]);
+
     function handleResetFilters() {
         setSearch('');
         setBrandId('');
@@ -184,6 +210,73 @@ export default function ProductListPage() {
         setStatus('');
         setSort(ProductSort.NEWEST);
         setPage(1);
+    }
+
+    function handleOpenDeleteModal(product: Product) {
+        setDeleteError('');
+        setSuccessMessage('');
+        setDeletingProduct(product);
+    }
+
+    function handleCloseDeleteModal() {
+        if (deleting) return;
+
+        setDeletingProduct(null);
+        setDeleteError('');
+    }
+
+    async function handleDeleteProduct() {
+        if (!deletingProduct || deleting) return;
+
+        const productId = deletingProduct.id;
+        const productName = deletingProduct.name;
+
+        try {
+            setDeleting(true);
+            setDeleteError('');
+
+            await productsApi.remove(productId);
+
+            setDeletingProduct(null);
+
+            setSuccessMessage(
+                `Đã xóa sản phẩm "${productName}" thành công.`,
+            );
+
+            setProducts((previous) => previous.filter((product) => product.id !== productId,),);
+
+            if (!meta) {
+                setRefreshKey((value) => value + 1);
+                return;
+            }
+
+            const newTotal = Math.max(0, meta.total - 1);
+            const newTotalPages = Math.ceil(newTotal / meta.limit);
+
+            setMeta((previous) => {
+                if (!previous) return previous;
+
+                return {
+                    ...previous,
+                    total: newTotal,
+                    totalPages: newTotalPages,
+                };
+            });
+
+            // Nếu trang hiện tại không còn hợp lệ.
+            if (page > Math.max(1, newTotalPages)) {
+                setPage(Math.max(1, newTotalPages));
+                return;
+            }
+
+            if (page < meta.totalPages) {
+                setRefreshKey((value) => value + 1);
+            }
+        } catch (error) {
+            setDeleteError(getApiErrorMessage(error));
+        } finally {
+            setDeleting(false);
+        }
     }
 
     async function handleCreateProduct(
@@ -380,6 +473,14 @@ export default function ProductListPage() {
                 onImageDeleted={handleImageDeleted}
             />
 
+            <ProductDeleteModal
+                product={deletingProduct}
+                deleting={deleting}
+                error={deleteError}
+                onClose={handleCloseDeleteModal}
+                onConfirm={handleDeleteProduct}
+            />
+
             {/* Page header */}
             <div className="flex flex-wrap items-center justify-between gap-4">
                 <div>
@@ -405,6 +506,29 @@ export default function ProductListPage() {
                     Thêm sản phẩm
                 </button>
             </div>
+
+            {/* hiện thông báo  */}
+            {successMessage && (
+                <div
+                    role="status"
+                    className="
+                        flex items-center justify-between
+                        gap-3 rounded-xl border
+                        border-green-200 bg-green-50
+                        px-4 py-3 text-sm text-green-700
+                    "
+                >
+                    <span>{successMessage}</span>
+
+                    <button
+                        type="button"
+                        onClick={() => setSuccessMessage('')}
+                        className="font-medium hover:text-green-900"
+                    >
+                        Đóng
+                    </button>
+                </div>
+            )}
 
             {/* Product table */}
             <section className="overflow-hidden rounded-2xl border border-gray-200 bg-white">
@@ -683,6 +807,25 @@ export default function ProductListPage() {
                                                         className="rounded-lg border border-gray-200 p-2 text-gray-600 transition hover:border-black hover:bg-gray-100 hover:text-black"
                                                     >
                                                         <Pencil size={16} />
+                                                    </button>
+
+                                                    <button
+                                                        type="button"
+                                                        title={`Xóa ${product.name}`}
+                                                        aria-label={`Xóa ${product.name}`}
+                                                        onClick={() => handleOpenDeleteModal(product)}
+                                                        disabled={deleting}
+                                                        className="
+                                                            rounded-lg border border-red-200
+                                                            p-2 text-red-500 transition
+                                                            hover:border-red-500
+                                                            hover:bg-red-50
+                                                            hover:text-red-600
+                                                            disabled:cursor-not-allowed
+                                                            disabled:opacity-50
+                                                        "
+                                                    >
+                                                        <Trash2 size={16} />
                                                     </button>
                                                 </div>
                                             </td>
