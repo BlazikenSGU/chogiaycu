@@ -31,7 +31,6 @@ import ProductFormModal from '../components/ProductFormModal';
 import ProductDeleteModal from '../components/ProductDeleteModal';
 import type { CreateProductDto, UpdateProductDto } from '../types/product.types';
 
-
 const statusLabels: Record<ProductStatus, string> = {
     DRAFT: 'Bản nháp',
     ACTIVE: 'Đang bán',
@@ -81,9 +80,6 @@ export default function ProductListPage() {
         useState<boolean>(false);
 
     const [deleteError, setDeleteError] =
-        useState<string>('');
-
-    const [successMessage, setSuccessMessage] =
         useState<string>('');
 
     const [sort, setSort] = useState<ProductSort>(
@@ -193,16 +189,6 @@ export default function ProductListPage() {
         };
     }, [page, debouncedSearch, status, brandId, categoryId, sort, refreshKey]);
 
-    useEffect(() => {
-        if (!successMessage) return;
-
-        const timer = setTimeout(() => {
-            setSuccessMessage('');
-        }, 4000);
-
-        return () => clearTimeout(timer);
-    }, [successMessage]);
-
     function handleResetFilters() {
         setSearch('');
         setBrandId('');
@@ -214,7 +200,6 @@ export default function ProductListPage() {
 
     function handleOpenDeleteModal(product: Product) {
         setDeleteError('');
-        setSuccessMessage('');
         setDeletingProduct(product);
     }
 
@@ -231,6 +216,10 @@ export default function ProductListPage() {
         const productId = deletingProduct.id;
         const productName = deletingProduct.name;
 
+        const toastId = notify.loading(
+            'Đang xóa sản phẩm...',
+        );
+
         try {
             setDeleting(true);
             setDeleteError('');
@@ -239,19 +228,30 @@ export default function ProductListPage() {
 
             setDeletingProduct(null);
 
-            setSuccessMessage(
-                `Đã xóa sản phẩm "${productName}" thành công.`,
+            notify.updateSuccess(
+                toastId,
+                `Đã xóa sản phẩm "${productName}".`,
             );
 
-            setProducts((previous) => previous.filter((product) => product.id !== productId,),);
+            setProducts((previous) =>
+                previous.filter(
+                    (product) => product.id !== productId,
+                ),
+            );
 
             if (!meta) {
                 setRefreshKey((value) => value + 1);
                 return;
             }
 
-            const newTotal = Math.max(0, meta.total - 1);
-            const newTotalPages = Math.ceil(newTotal / meta.limit);
+            const newTotal = Math.max(
+                0,
+                meta.total - 1,
+            );
+
+            const newTotalPages = Math.ceil(
+                newTotal / meta.limit,
+            );
 
             setMeta((previous) => {
                 if (!previous) return previous;
@@ -263,7 +263,6 @@ export default function ProductListPage() {
                 };
             });
 
-            // Nếu trang hiện tại không còn hợp lệ.
             if (page > Math.max(1, newTotalPages)) {
                 setPage(Math.max(1, newTotalPages));
                 return;
@@ -272,8 +271,17 @@ export default function ProductListPage() {
             if (page < meta.totalPages) {
                 setRefreshKey((value) => value + 1);
             }
+
         } catch (error) {
-            setDeleteError(getApiErrorMessage(error));
+            const message = getApiErrorMessage(error);
+
+            setDeleteError(message);
+
+            notify.updateError(
+                toastId,
+                message,
+            );
+
         } finally {
             setDeleting(false);
         }
@@ -283,23 +291,43 @@ export default function ProductListPage() {
         data: CreateProductDto,
         images: File[],
     ) {
-        if (images.length > 6) {
-            throw new Error(
-                'Mỗi sản phẩm chỉ được tối đa 6 ảnh.',
+        const toastId = notify.loading(
+            'Đang tạo sản phẩm...',
+        );
+
+        try {
+            if (images.length > 6) {
+                throw new Error(
+                    'Mỗi sản phẩm chỉ được tối đa 6 ảnh.',
+                );
+            }
+
+            if (images.length === 0) {
+                await productsApi.create(data);
+            } else {
+                await productsApi.createWithImages(
+                    data,
+                    images,
+                );
+            }
+
+            setCreateModalOpen(false);
+            setPage(1);
+            setRefreshKey((value) => value + 1);
+
+            notify.updateSuccess(
+                toastId,
+                'Tạo sản phẩm thành công!',
             );
-        }
 
-        if (images.length === 0) {
-            await productsApi.create(data);
-        } else {
-            // Backend xử lý upload song song và Prisma transaction.
-            await productsApi.createWithImages(data, images);
-        }
+        } catch (error) {
+            notify.updateError(
+                toastId,
+                getApiErrorMessage(error),
+            );
 
-        // Chỉ đóng modal khi backend trả về thành công.
-        setCreateModalOpen(false);
-        setPage(1);
-        setRefreshKey((value) => value + 1);
+            throw error;
+        }
     }
 
     function shouldRefreshAfterUpdate(
@@ -356,6 +384,11 @@ export default function ProductListPage() {
         images: File[],
     ) {
         if (!editingProduct) return;
+
+        const toastId = notify.loading(
+            'Đang cập nhật sản phẩm...',
+        );
+
         const previousProduct = editingProduct;
 
         const productId = editingProduct.id;
@@ -407,14 +440,28 @@ export default function ProductListPage() {
                     (result) => result.status === 'rejected',
                 )
             ) {
-                throw new Error(
-                    'Lưu sản phẩm thất bại. Một số ảnh mới chưa được dọn sạch. Vui lòng tải lại sản phẩm để kiểm tra.',
-                );
+                const message =
+                    'Lưu sản phẩm thất bại. Một số ảnh mới chưa được dọn sạch. Vui lòng tải lại sản phẩm để kiểm tra.';
+
+                notify.updateError(toastId, message);
+
+                throw new Error(message, {
+                    cause: error,
+                });
             }
+
+            notify.updateError(
+                toastId,
+                getApiErrorMessage(error),
+            );
 
             throw error;
         }
         setEditingProduct(null);
+        notify.updateSuccess(
+            toastId,
+            'Cập nhật sản phẩm thành công!',
+        );
     }
 
 
@@ -506,29 +553,6 @@ export default function ProductListPage() {
                     Thêm sản phẩm
                 </button>
             </div>
-
-            {/* hiện thông báo  */}
-            {successMessage && (
-                <div
-                    role="status"
-                    className="
-                        flex items-center justify-between
-                        gap-3 rounded-xl border
-                        border-green-200 bg-green-50
-                        px-4 py-3 text-sm text-green-700
-                    "
-                >
-                    <span>{successMessage}</span>
-
-                    <button
-                        type="button"
-                        onClick={() => setSuccessMessage('')}
-                        className="font-medium hover:text-green-900"
-                    >
-                        Đóng
-                    </button>
-                </div>
-            )}
 
             {/* Product table */}
             <section className="overflow-hidden rounded-2xl border border-gray-200 bg-white">
