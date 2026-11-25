@@ -10,6 +10,7 @@ import {
     ChevronRight,
     ImageOff,
     RotateCcw,
+    Trash2,
 } from 'lucide-react';
 
 import { productsApi } from '../api/product.api';
@@ -27,6 +28,7 @@ import type { Brand } from '../../brands/types/brand.types';
 import type { Category } from '../../categories/types/category.types';
 
 import ProductFormModal from '../components/ProductFormModal';
+import ProductDeleteModal from '../components/ProductDeleteModal';
 import type { CreateProductDto, UpdateProductDto } from '../types/product.types';
 
 const statusLabels: Record<ProductStatus, string> = {
@@ -70,6 +72,16 @@ export default function ProductListPage() {
 
     const [createModalOpen, setCreateModalOpen] = useState<boolean>(false);
     const [editingProduct, setEditingProduct] = useState<Product | null>(null);
+
+    const [deletingProduct, setDeletingProduct] =
+        useState<Product | null>(null);
+
+    const [deleting, setDeleting] =
+        useState<boolean>(false);
+
+    const [deleteError, setDeleteError] =
+        useState<string>('');
+
     const [sort, setSort] = useState<ProductSort>(
         ProductSort.NEWEST,
     );
@@ -149,7 +161,7 @@ export default function ProductListPage() {
                         result.meta.totalPages,
                     );
 
-                    if(page > lastValidPage){
+                    if (page > lastValidPage) {
                         setPage(lastValidPage);
                         return;
                     }
@@ -186,27 +198,136 @@ export default function ProductListPage() {
         setPage(1);
     }
 
+    function handleOpenDeleteModal(product: Product) {
+        setDeleteError('');
+        setDeletingProduct(product);
+    }
+
+    function handleCloseDeleteModal() {
+        if (deleting) return;
+
+        setDeletingProduct(null);
+        setDeleteError('');
+    }
+
+    async function handleDeleteProduct() {
+        if (!deletingProduct || deleting) return;
+
+        const productId = deletingProduct.id;
+        const productName = deletingProduct.name;
+
+        const toastId = notify.loading(
+            'Đang xóa sản phẩm...',
+        );
+
+        try {
+            setDeleting(true);
+            setDeleteError('');
+
+            await productsApi.remove(productId);
+
+            setDeletingProduct(null);
+
+            notify.updateSuccess(
+                toastId,
+                `Đã xóa sản phẩm "${productName}".`,
+            );
+
+            setProducts((previous) =>
+                previous.filter(
+                    (product) => product.id !== productId,
+                ),
+            );
+
+            if (!meta) {
+                setRefreshKey((value) => value + 1);
+                return;
+            }
+
+            const newTotal = Math.max(
+                0,
+                meta.total - 1,
+            );
+
+            const newTotalPages = Math.ceil(
+                newTotal / meta.limit,
+            );
+
+            setMeta((previous) => {
+                if (!previous) return previous;
+
+                return {
+                    ...previous,
+                    total: newTotal,
+                    totalPages: newTotalPages,
+                };
+            });
+
+            if (page > Math.max(1, newTotalPages)) {
+                setPage(Math.max(1, newTotalPages));
+                return;
+            }
+
+            if (page < meta.totalPages) {
+                setRefreshKey((value) => value + 1);
+            }
+
+        } catch (error) {
+            const message = getApiErrorMessage(error);
+
+            setDeleteError(message);
+
+            notify.updateError(
+                toastId,
+                message,
+            );
+
+        } finally {
+            setDeleting(false);
+        }
+    }
+
     async function handleCreateProduct(
         data: CreateProductDto,
         images: File[],
     ) {
-        if (images.length > 6) {
-            throw new Error(
-                'Mỗi sản phẩm chỉ được tối đa 6 ảnh.',
+        const toastId = notify.loading(
+            'Đang tạo sản phẩm...',
+        );
+
+        try {
+            if (images.length > 6) {
+                throw new Error(
+                    'Mỗi sản phẩm chỉ được tối đa 6 ảnh.',
+                );
+            }
+
+            if (images.length === 0) {
+                await productsApi.create(data);
+            } else {
+                await productsApi.createWithImages(
+                    data,
+                    images,
+                );
+            }
+
+            setCreateModalOpen(false);
+            setPage(1);
+            setRefreshKey((value) => value + 1);
+
+            notify.updateSuccess(
+                toastId,
+                'Tạo sản phẩm thành công!',
             );
-        }
 
-        if (images.length === 0) {
-            await productsApi.create(data);
-        } else {
-            // Backend xử lý upload song song và Prisma transaction.
-            await productsApi.createWithImages(data, images);
-        }
+        } catch (error) {
+            notify.updateError(
+                toastId,
+                getApiErrorMessage(error),
+            );
 
-        // Chỉ đóng modal khi backend trả về thành công.
-        setCreateModalOpen(false);
-        setPage(1);
-        setRefreshKey((value) => value + 1);
+            throw error;
+        }
     }
 
     function shouldRefreshAfterUpdate(
@@ -263,6 +384,11 @@ export default function ProductListPage() {
         images: File[],
     ) {
         if (!editingProduct) return;
+
+        const toastId = notify.loading(
+            'Đang cập nhật sản phẩm...',
+        );
+
         const previousProduct = editingProduct;
 
         const productId = editingProduct.id;
@@ -314,14 +440,28 @@ export default function ProductListPage() {
                     (result) => result.status === 'rejected',
                 )
             ) {
-                throw new Error(
-                    'Lưu sản phẩm thất bại. Một số ảnh mới chưa được dọn sạch. Vui lòng tải lại sản phẩm để kiểm tra.',
-                );
+                const message =
+                    'Lưu sản phẩm thất bại. Một số ảnh mới chưa được dọn sạch. Vui lòng tải lại sản phẩm để kiểm tra.';
+
+                notify.updateError(toastId, message);
+
+                throw new Error(message, {
+                    cause: error,
+                });
             }
+
+            notify.updateError(
+                toastId,
+                getApiErrorMessage(error),
+            );
 
             throw error;
         }
         setEditingProduct(null);
+        notify.updateSuccess(
+            toastId,
+            'Cập nhật sản phẩm thành công!',
+        );
     }
 
 
@@ -378,6 +518,14 @@ export default function ProductListPage() {
                 onSubmit={handleUpdateProduct}
                 onPrimaryChange={handlePrimaryChange}
                 onImageDeleted={handleImageDeleted}
+            />
+
+            <ProductDeleteModal
+                product={deletingProduct}
+                deleting={deleting}
+                error={deleteError}
+                onClose={handleCloseDeleteModal}
+                onConfirm={handleDeleteProduct}
             />
 
             {/* Page header */}
@@ -683,6 +831,25 @@ export default function ProductListPage() {
                                                         className="rounded-lg border border-gray-200 p-2 text-gray-600 transition hover:border-black hover:bg-gray-100 hover:text-black"
                                                     >
                                                         <Pencil size={16} />
+                                                    </button>
+
+                                                    <button
+                                                        type="button"
+                                                        title={`Xóa ${product.name}`}
+                                                        aria-label={`Xóa ${product.name}`}
+                                                        onClick={() => handleOpenDeleteModal(product)}
+                                                        disabled={deleting}
+                                                        className="
+                                                            rounded-lg border border-red-200
+                                                            p-2 text-red-500 transition
+                                                            hover:border-red-500
+                                                            hover:bg-red-50
+                                                            hover:text-red-600
+                                                            disabled:cursor-not-allowed
+                                                            disabled:opacity-50
+                                                        "
+                                                    >
+                                                        <Trash2 size={16} />
                                                     </button>
                                                 </div>
                                             </td>
