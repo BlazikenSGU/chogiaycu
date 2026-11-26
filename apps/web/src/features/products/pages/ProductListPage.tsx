@@ -11,6 +11,7 @@ import {
     ImageOff,
     RotateCcw,
     Trash2,
+    X,
 } from 'lucide-react';
 
 import { productsApi } from '../api/product.api';
@@ -573,19 +574,30 @@ export default function ProductListPage() {
                                 </p>
                             </div>
                         </div>
-                        <div className="relative min-w-[220px] flex-1">
+                        <div className="relative w-full max-w-lg shrink-0">
                             <Search
                                 size={17}
                                 className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"
                             />
 
                             <input
-                                type="search"
+                                type="text"
+                                aria-label="Tìm sản phẩm"
                                 value={search}
                                 onChange={(event) => setSearch(event.target.value)}
                                 placeholder="Tìm sản phẩm..."
-                                className="w-full rounded-xl border border-gray-200 bg-gray-50 py-2.5 pl-10 pr-3 text-sm outline-none focus:border-black"
+                                className="w-full rounded-xl border border-gray-200 bg-gray-50 py-2.5 pl-10 pr-10 text-sm outline-none focus:border-black"
                             />
+                            {search && (
+                                <button
+                                    type="button"
+                                    aria-label="Xóa từ khóa"
+                                    onClick={() => setSearch('')}
+                                    className="absolute right-2 top-1/2 grid size-7 -translate-y-1/2 place-items-center rounded-md text-gray-500 hover:bg-gray-200 hover:text-gray-900"
+                                >
+                                    <X size={17} aria-hidden="true" />
+                                </button>
+                            )}
                         </div>
 
 
@@ -728,8 +740,17 @@ export default function ProductListPage() {
                         Đang tải danh sách sản phẩm...
                     </div>
                 ) : !error ? (
-                    <div className="overflow-x-auto">
-                        <table className="w-full min-w-[900px] text-left text-sm">
+                    <div className="w-full overflow-x-auto">
+                        <table className="w-full min-w-[900px] table-fixed text-left text-sm">
+                            <colgroup>
+                                <col className="w-[27%]" />
+                                <col className="w-[16%]" />
+                                <col className="w-[13%]" />
+                                <col className="w-[8%]" />
+                                <col className="w-[8%]" />
+                                <col className="w-[14%]" />
+                                <col className="w-[14%]" />
+                            </colgroup>
                             <thead className="bg-gray-50 text-xs uppercase text-gray-500">
                                 <tr>
                                     <th className="px-6 py-4 font-medium">
@@ -790,14 +811,14 @@ export default function ProductListPage() {
                                                         <p className="max-w-[250px] truncate font-semibold text-gray-900">
                                                             {product.name}
                                                         </p>
-                                                        <p className="mt-1 text-xs text-gray-400">
+                                                        <p className="mt-1 truncate text-xs text-gray-400">
                                                             {product.category.name}
                                                         </p>
                                                     </div>
                                                 </div>
                                             </td>
 
-                                            <td className="px-6 py-4 text-gray-600">
+                                            <td className="wrap-anywhere px-6 py-4 text-gray-600">
                                                 {product.brand.name}
                                             </td>
 

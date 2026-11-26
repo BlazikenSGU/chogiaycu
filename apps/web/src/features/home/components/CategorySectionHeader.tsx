@@ -1,17 +1,17 @@
 import { Link } from 'react-router-dom';
 
-export default function PopularSectionHeader() {
+export default function CategorySectionHeader() {
   return (
     <div className="mb-5 flex items-center justify-between">
       <h2 className="text-lg font-bold">
-        Most Popular
+        Danh mục
       </h2>
 
       <Link
         to="/shop"
         className="text-sm font-semibold"
       >
-        See All
+        Xem tất cả
       </Link>
     </div>
   );

@@ -18,7 +18,7 @@ export default function HomeSearch({
         />
 
         <input
-          type="search"
+          type=""
           aria-label="Tìm kiếm sản phẩm"
           value={value}
           onChange={(event) =>

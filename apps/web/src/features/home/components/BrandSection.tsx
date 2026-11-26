@@ -32,7 +32,7 @@ export default function BrandSection({
           to="/shop"
           className="text-sm font-semibold"
         >
-          See All
+          Xem tất cả
         </Link>
       </div>
 

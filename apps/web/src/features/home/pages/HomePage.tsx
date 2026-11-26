@@ -5,7 +5,7 @@ import HeroBanner from '../components/HeroBanner';
 import BrandSection from '../components/BrandSection';
 import CategorySection from '../components/CategorySection';
 
-import PopularSectionHeader from '../components/PopularSectionHeader';
+import CategorySectionHeader from '../components/CategorySectionHeader';
 import ProductSection from '../components/ProductSection';
 
 import MobileNavigation from '../components/MobileNavigation';
@@ -22,11 +22,6 @@ export default function HomePage() {
 
         <HomeHeader />
 
-        <HomeSearch
-          value={filters.search}
-          onChange={filters.setSearch}
-        />
-
         <HeroBanner />
 
         <BrandSection
@@ -34,11 +29,15 @@ export default function HomePage() {
           onSelect={filters.setBrandId}
         />
 
-        <PopularSectionHeader />
-
+        <CategorySectionHeader />
         <CategorySection
           selectedId={filters.categoryId}
           onSelect={filters.setCategoryId}
+        />
+
+        <HomeSearch
+          value={filters.search}
+          onChange={filters.setSearch}
         />
 
         <ProductSection
