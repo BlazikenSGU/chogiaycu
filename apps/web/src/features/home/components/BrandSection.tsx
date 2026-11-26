@@ -85,7 +85,7 @@ export default function BrandSection({
                   <BrandLogo
                     src={brand.logoUrl}
                     alt={brand.name}
-                    className="h-7 w-7 object-contain"
+                    className="h-10 w-10 object-contain"
                   />
                 </span>
 

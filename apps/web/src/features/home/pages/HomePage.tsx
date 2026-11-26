@@ -11,13 +11,14 @@ import ProductSection from '../components/ProductSection';
 import MobileNavigation from '../components/MobileNavigation';
 
 import { useHomeFilters } from '../hooks/useHomeFilters';
+import Footer from '../../../components/layout/Footer';
 
 export default function HomePage() {
   const filters = useHomeFilters();
 
   return (
-    <div className="min-h-screen bg-white pb-20 text-[#171717] md:pb-0">
-      <div className="mx-auto max-w-7xl px-5 py-7 md:px-8">
+    <div className="flex min-h-screen flex-col bg-white pb-20 text-[#171717] md:pb-0">
+      <div className="mx-auto w-full max-w-7xl flex-1 px-5 py-7 md:px-8 mb-3">
 
         <HomeHeader />
 
@@ -48,6 +49,7 @@ export default function HomePage() {
         />
 
       </div>
+      <Footer />
 
       <MobileNavigation />
     </div>

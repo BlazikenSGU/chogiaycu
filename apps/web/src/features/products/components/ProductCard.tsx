@@ -70,7 +70,7 @@ export default function ProductCard({
         </p>
 
         <div className="mt-2 flex flex-wrap items-center gap-2">
-          <p className="text-base font-extrabold md:text-lg">
+          <p className="text-base font-semibold md:text-base">
             {priceFormatter.format(product.price)}
           </p>
 
