@@ -72,35 +72,32 @@ export default function CheckEmailPage() {
       }
     >
       <div style={{ textAlign: 'center' }}>
-        <MailCheck size={64} color="#15803d" />
+        <MailCheck size={64} color="#15803d" className='m-auto' />
 
-        <h2>Xác thực tài khoản</h2>
-
-        <p>
-          Hãy kiểm tra email và nhấn vào liên kết
-          xác thực tài khoản.
-        </p>
+        <span className='text-sm'>Xác thực tài khoản
+          <br />
+          Hãy kiểm tra email và nhấn vào liên kết xác thực tài khoản.
+        </span>
 
         <input
           type="email"
-          readOnly
           value={email}
           onChange={(e) => setEmail(e.target.value)}
           placeholder="Địa chỉ email"
           disabled={loading}
           style={{
             width: '100%',
-            padding: 12,
+            fontSize: 14,
             margin: '16px 0',
+            textAlign: 'center',
           }}
         />
 
-        <p>Liên kết có hiệu lực trong 15 phút.</p>
-
-        <p>
-          Nếu chưa nhận được email, hãy kiểm tra
-          thư mục Spam.
-        </p>
+        <span className='text-sm'>
+          Liên kết có hiệu lực trong 15 phút.
+          <br />
+          Nếu chưa nhận được email, hãy kiểm tra thư mục Spam.
+        </span>
 
         {error && (
           <p className="auth-error" role="alert">
@@ -115,7 +112,7 @@ export default function CheckEmailPage() {
         )}
 
         <button
-          className="auth-submit"
+          className="auth-submit mt-3"
           type="button"
           onClick={() => void resend()}
           disabled={loading || cooldown > 0}

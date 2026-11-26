@@ -62,13 +62,15 @@ export default function VerifyEmailPage() {
             <CheckCircle
               size={64}
               color="#15803d"
+              className='m-auto'
             />
 
-            <h2>Xác thực thành công!</h2>
-
-            <p>
+            <span className='text-sm'>
+              Xác thực thành công!
+              <br />
               Tài khoản của bạn đã được kích hoạt.
-            </p>
+            </span>
+
 
             <Link to="/login">
               Đăng nhập ngay
@@ -76,13 +78,16 @@ export default function VerifyEmailPage() {
           </>
         ) : status === 'error' ? (
           <>
-            <XCircle size={64} color="#dc2626" />
+            <XCircle size={64} color="#dc2626" className='m-auto' />
 
-            <h2>Không thể xác thực</h2>
+            <span className='text-sm'>
+              Không thể xác thực
+              <br />
+              {message}
+              <br />
+            </span>
 
-            <p>{message}</p>
-
-            <Link to="/check-email">
+            <Link to="/check-email" className='text-sm text-red-500'>
               Gửi lại email xác thực
             </Link>
           </>
@@ -91,15 +96,16 @@ export default function VerifyEmailPage() {
             <ShieldCheck
               size={64}
               color="#15803d"
+              className='m-auto'
             />
 
-            <p>
+            <span className='text-sm'>
               Nhấn nút bên dưới để xác thực tài khoản.
-            </p>
+            </span>
 
             <button
               type="button"
-              className="auth-submit"
+              className="auth-submit mt-3"
               onClick={() => void verify()}
               disabled={status === 'loading'}
             >
@@ -110,6 +116,6 @@ export default function VerifyEmailPage() {
           </>
         )}
       </div>
-    </AuthLayout>
+    </AuthLayout >
   );
 }
