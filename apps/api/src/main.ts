@@ -20,7 +20,7 @@ async function bootstrap() {
   app.enableCors({
     origin: [
       'http://localhost:5173',
-      'https://72market.pages.dev',
+       process.env.FRONTEND_URL || 'https://72market.shop',
     ],
     credentials: true,
   });
