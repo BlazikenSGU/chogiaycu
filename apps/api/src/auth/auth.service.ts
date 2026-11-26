@@ -90,6 +90,7 @@ export class AuthService {
                         password,
                         name: dto.name,
                         role: 'CUSTOMER',
+                        emailVerificationRequired: true,
                     },
                     select: {
                         id: true,
@@ -105,8 +106,22 @@ export class AuthService {
             },
         );
 
-        const tokens = await this.issueToken(user);
-        return { user, ...tokens };
+        try {
+            await this.sendEmailVerification(
+                user.id,
+                user.email,
+            );
+        } catch {
+            console.error(
+                '[MAIL] Verification email request failed',
+            );
+        }
+
+        return {
+            message: 'Đăng ký thành công. Vui lòng kiểm tra email để xác thực tài khoản.',
+            email: user.email,
+            requiresEmailVerification: true,
+        }
     }
 
     async login(dto: LoginDto, ip: string) {
@@ -171,6 +186,17 @@ export class AuthService {
             value: email,
         });
 
+        if (user.emailVerificationRequired && !user.emailVerifiedAt) {
+            throw new HttpException(
+                {
+                    statusCode: HttpStatus.FORBIDDEN,
+                    code: 'EMAIL_NOT_VERIFIED',
+                    message: 'Vui lòng xác thực email trước khi đăng nhập',
+                },
+                HttpStatus.FORBIDDEN
+            );
+        }
+
         const tokens = await this.issueToken(user);
 
         return {
@@ -194,7 +220,8 @@ export class AuthService {
             include: { user: true },
         });
 
-        if (!session || session.revokedAt || session.expiresAt < new Date() || !session.user.isActive) {
+        if (!session || session.revokedAt || session.expiresAt < new Date() || !session.user.isActive || (session.user.emailVerificationRequired &&
+            !session.user.emailVerifiedAt)) {
             throw new UnauthorizedException('Phiên đăng nhập không hợp lệ');
         }
 
@@ -483,5 +510,191 @@ export class AuthService {
             message: 'Đặt lại mật khẩu thành công. Vui lòng đăng nhập lại.',
         };
     }
+
+    private async sendEmailVerification(
+        userId: string,
+        email: string,
+    ): Promise<void> {
+        const token = randomBytes(32).toString('hex');
+        const tokenHash = this.hashToken(token);
+
+        const expiresAt = new Date(
+            Date.now() + 15 * 60_000,
+        );
+
+        const issued = await this.prisma.$transaction(
+            async (tx) => {
+                const user = await tx.user.updateMany({
+                    where: {
+                        id: userId,
+                        isActive: true,
+                        emailVerificationRequired: true,
+                        emailVerifiedAt: null,
+                    },
+                    data: {
+                        emailVerificationRequired: true,
+                    },
+                });
+
+                if (user.count !== 1) return false;
+
+                await tx.emailVerificationToken.upsert({
+                    where: { userId },
+                    create: {
+                        userId,
+                        tokenHash,
+                        expiresAt,
+                    },
+                    update: {
+                        tokenHash,
+                        expiresAt,
+                        createdAt: new Date(),
+                    },
+                });
+
+                return true;
+            },
+        );
+
+        if (!issued) return;
+
+        const frontendUrl = this.config
+            .getOrThrow<string>('FRONTEND_URL')
+            .replace(/\/+$/, '');
+
+        const verifyUrl =
+            `${frontendUrl}/verify-email#token=${token}`;
+
+        await this.mail.sendVerificationEmail(
+            email,
+            verifyUrl,
+        );
+
+    }
+
+    async verifyEmail(token: string) {
+        if (!/^[a-f0-9]{64}$/i.test(token)) {
+            throw new BadRequestException(
+                'Link xác thực không hợp lệ',
+            );
+        }
+
+        const tokenHash = this.hashToken(token);
+
+        const user = await this.prisma.$transaction(
+            async (tx) => {
+                const record =
+                    await tx.emailVerificationToken.findUnique({
+                        where: { tokenHash },
+                    });
+
+                if (!record) {
+                    throw new BadRequestException(
+                        'Link không hợp lệ hoặc đã được sử dụng',
+                    );
+                }
+
+                // Khóa bản ghi user trước khi tiêu thụ token.
+                const updated = await tx.user.updateMany({
+                    where: {
+                        id: record.userId,
+                        isActive: true,
+                        emailVerifiedAt: null,
+                        emailVerificationRequired: true,
+                    },
+                    data: {
+                        emailVerifiedAt: new Date(),
+                    },
+                });
+
+                if (updated.count !== 1) {
+                    throw new BadRequestException(
+                        'Tài khoản không thể xác thực',
+                    );
+                }
+
+                const consumed =
+                    await tx.emailVerificationToken.deleteMany({
+                        where: {
+                            userId: record.userId,
+                            tokenHash,
+                            expiresAt: { gt: new Date() },
+                        },
+                    });
+
+                if (consumed.count !== 1) {
+                    throw new BadRequestException(
+                        'Link đã hết hạn hoặc không còn hợp lệ',
+                    );
+                }
+
+                return tx.user.findUniqueOrThrow({
+                    where: { id: record.userId },
+                    select: {
+                        id: true,
+                        email: true,
+                    },
+                });
+            },
+        );
+
+        try {
+            await this.mail.sendWelcomeEmail(
+                user.email,
+                user.id,
+            );
+        } catch {
+            console.error('[MAIL] Welcome email failed');
+        }
+
+        return {
+            message: 'Xác thực email thành công',
+        };
+    }
+
+    async resendVerification(
+        email: string,
+        ip: string,
+    ) {
+        const normalizedEmail =
+            email.trim().toLowerCase();
+
+        const message =
+            'Nếu tài khoản cần xác thực, bạn sẽ nhận được email mới.';
+
+        await this.rateLimit.consumeForgotRequest(
+            normalizedEmail,
+            ip,
+            'verify-email',
+        );
+
+        const user = await this.prisma.user.findUnique({
+            where: { email: normalizedEmail },
+        });
+
+        if (
+            !user ||
+            !user.isActive ||
+            !user.emailVerificationRequired ||
+            user.emailVerifiedAt
+        ) {
+            return { message };
+        }
+
+        try {
+            await this.sendEmailVerification(
+                user.id,
+                user.email,
+            );
+        } catch {
+            console.error(
+                '[MAIL] Resend verification request failed',
+            );
+        }
+
+        return { message };
+    }
+
+
 
 }

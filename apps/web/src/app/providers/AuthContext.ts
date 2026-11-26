@@ -3,6 +3,7 @@ import type {
     AuthUser,
     LoginDto,
     RegisterDto,
+    RegisterResponse,
 } from '../../features/auth/types/auth.types';
 
 export type AuthStatus = | 'loading' | 'authenticated' | 'unauthenticated';
@@ -15,7 +16,7 @@ export interface AuthContextValue {
     isAdmin: boolean;
 
     login: (data: LoginDto) => Promise<AuthUser>;
-    register: (data: RegisterDto) => Promise<AuthUser>;
+    register: (data: RegisterDto) => Promise<RegisterResponse>;
     logout: () => Promise<void>;
     updateProfile: (data: {name: string}) => Promise<AuthUser>;
 }

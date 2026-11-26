@@ -8,7 +8,7 @@ import { createHash } from 'node:crypto';
 import { PrismaService } from '../../prisma/prisma.service.js';
 import type { Prisma } from '../../generated/prisma/client.js';
 
-type RateLimitAction = 'login' | 'forgot' | 'register';
+type RateLimitAction = 'login' | 'forgot' | 'register' | 'verify-email';
 type RateLimitScope = 'email' | 'ip';
 
 type RateLimitKey = {
@@ -294,15 +294,16 @@ export class AuthRateLimitService {
     async consumeForgotRequest(
         email: string,
         ip: string,
+        action: 'forgot' | 'verify-email' = 'forgot',
     ): Promise<void> {
         const emailKey = this.makeKey({
-            action: 'forgot',
+            action,
             scope: 'email',
             value: email,
         });
 
         const ipKey = this.makeKey({
-            action: 'forgot',
+            action,
             scope: 'ip',
             value: ip,
         });

@@ -22,6 +22,8 @@ import { UpdateProfileDto } from './dto/update-profile.dto.js';
 import { ChangePasswordDto } from './dto/change-password.dto.js';
 import { ForgotPasswordDto } from './dto/forgot-password.dto.js';
 import { ResetPasswordDto } from './dto/reset-password.dto.js';
+import { VerifyEmailDto } from './dto/verify-email.dto.js';
+import { ResendVerificationDto } from './dto/resend-verification.dto.js';
 
 @Controller('auth')
 export class AuthController {
@@ -46,9 +48,7 @@ export class AuthController {
         @Res({ passthrough: true }) res: Response,
     ) {
         const ip = req.ip ?? req.socket.remoteAddress ?? 'unknown';
-        const { refreshToken, ...result } = await this.auth.register(dto, ip);
-        res.cookie('refresh_token', refreshToken, this.cookieOptions());
-        return result;
+        return this.auth.register(dto, ip);
     }
 
     @Post('login')
@@ -153,7 +153,6 @@ export class AuthController {
         return result;
     }
 
-
     @Post('forgot-password')
     async forgotPassword(
         @Body() dto: ForgotPasswordDto,
@@ -171,6 +170,29 @@ export class AuthController {
             dto.token,
             dto.newPassword,
             dto.confirmPassword,
+        );
+    }
+
+    @Post('verify-email')
+    async verifyEmail(
+        @Body() dto: VerifyEmailDto,
+    ) {
+        return this.auth.verifyEmail(dto.token);
+    }
+
+    @Post('resend-verification')
+    async resendVerification(
+        @Body() dto: ResendVerificationDto,
+        @Req() req: Request,
+    ) {
+        const ip =
+            req.ip ??
+            req.socket.remoteAddress ??
+            'unknown';
+
+        return this.auth.resendVerification(
+            dto.email,
+            ip,
         );
     }
 

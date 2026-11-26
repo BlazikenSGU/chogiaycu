@@ -86,3 +86,8 @@ export type AuthRateLimit = Prisma.AuthRateLimitModel
  * 
  */
 export type ImageKitCleanupJob = Prisma.ImageKitCleanupJobModel
+/**
+ * Model EmailVerificationToken
+ * 
+ */
+export type EmailVerificationToken = Prisma.EmailVerificationTokenModel

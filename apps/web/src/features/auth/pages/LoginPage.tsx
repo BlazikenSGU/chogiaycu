@@ -10,6 +10,8 @@ import { UserRole } from '../types/auth.types';
 import AuthLayout from '../components/AuthLayout';
 import AuthInput from '../components/AuthInput';
 
+import { isAxiosError } from 'axios';
+
 interface LoginLocationState {
   from?: {
     pathname?: string;
@@ -124,6 +126,19 @@ export default function LoginPage() {
 
       navigate(redirect(result.role), { replace: true });
     } catch (err) {
+      if (
+        isAxiosError(err) &&
+        err.response?.data?.code === 'EMAIL_NOT_VERIFIED'
+      ) {
+        navigate('/check-email', {
+          state: {
+            email: email.trim().toLowerCase(),
+          },
+        });
+
+        return;
+      }
+
       if (axios.isAxiosError<RateLimitResponse>(err)) {
         const response = err.response;
         const retryAfter = response?.data?.retryAfter;

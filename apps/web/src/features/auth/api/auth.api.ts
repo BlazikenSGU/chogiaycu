@@ -6,7 +6,8 @@ import type {
     LoginDto,
     RegisterDto,
     RefreshResponse,
-    LogoutResponse
+    LogoutResponse,
+    RegisterResponse
 } from '../types/auth.types';
 
 export const authApi = {
@@ -20,7 +21,7 @@ export const authApi = {
     },
 
     async register(data: RegisterDto) {
-        const res = await api.post<AuthResponse>(
+        const res = await api.post<RegisterResponse>(
             '/auth/register',
             data
         );
@@ -90,6 +91,24 @@ export const authApi = {
         const res = await api.post<{ message: string }>(
             '/auth/reset-password',
             data
+        );
+
+        return res.data;
+    },
+
+    async verifyEmail(token: string) {
+        const res = await api.post<{ message: string }>(
+            '/auth/verify-email',
+            { token },
+        );
+
+        return res.data;
+    },
+
+    async resendVerification(email: string) {
+        const res = await api.post<{ message: string }>(
+            '/auth/resend-verification',
+            { email },
         );
 
         return res.data;
