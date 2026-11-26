@@ -107,13 +107,20 @@ export class AuthService {
         );
 
         try {
+            console.log('[MAIL][REGISTER] Starting verification');
+
             await this.sendEmailVerification(
                 user.id,
                 user.email,
             );
-        } catch {
+
+            console.log('[MAIL][REGISTER] Verification completed');
+        } catch (error) {
             console.error(
-                '[MAIL] Verification email request failed',
+                '[MAIL][REGISTER] Verification failed:',
+                error instanceof Error
+                    ? error.message
+                    : 'Unknown error',
             );
         }
 
@@ -511,6 +518,7 @@ export class AuthService {
         };
     }
 
+
     private async sendEmailVerification(
         userId: string,
         email: string,
@@ -521,6 +529,8 @@ export class AuthService {
         const expiresAt = new Date(
             Date.now() + 15 * 60_000,
         );
+
+        console.log('[MAIL] Creating verification token');
 
         const issued = await this.prisma.$transaction(
             async (tx) => {
@@ -536,7 +546,13 @@ export class AuthService {
                     },
                 });
 
-                if (user.count !== 1) return false;
+                if (user.count !== 1) {
+                    console.warn(
+                        '[MAIL] User not eligible for verification',
+                    );
+
+                    return false;
+                }
 
                 await tx.emailVerificationToken.upsert({
                     where: { userId },
@@ -554,9 +570,18 @@ export class AuthService {
 
                 return true;
             },
+            {
+                maxWait: 10000,
+                timeout: 15000,
+            },
         );
 
-        if (!issued) return;
+        if (!issued) {
+            console.warn('[MAIL] Verification skipped');
+            return;
+        }
+
+        console.log('[MAIL] Verification token created');
 
         const frontendUrl = this.config
             .getOrThrow<string>('FRONTEND_URL')
@@ -565,12 +590,16 @@ export class AuthService {
         const verifyUrl =
             `${frontendUrl}/verify-email#token=${token}`;
 
+        console.log('[MAIL] Calling Resend API');
+
         await this.mail.sendVerificationEmail(
             email,
             verifyUrl,
         );
 
+        console.log('[MAIL] Resend accepted verification email');
     }
+
 
     async verifyEmail(token: string) {
         if (!/^[a-f0-9]{64}$/i.test(token)) {

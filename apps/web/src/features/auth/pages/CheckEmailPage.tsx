@@ -83,6 +83,7 @@ export default function CheckEmailPage() {
 
         <input
           type="email"
+          readOnly
           value={email}
           onChange={(e) => setEmail(e.target.value)}
           placeholder="Địa chỉ email"

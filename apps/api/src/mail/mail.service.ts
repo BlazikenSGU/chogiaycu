@@ -37,7 +37,7 @@ export class MailService {
 
       if (error) {
         this.logger.error(
-          `Resend error: ${error.name}`,
+          `Resend error: ${error.name} - ${error.message}`,
         );
 
         throw new InternalServerErrorException(
@@ -48,7 +48,14 @@ export class MailService {
       this.logger.log(
         `Resend accepted email. ID: ${data?.id ?? 'N/A'}`,
       );
-    } catch {
+    } catch (error) {
+      this.logger.error(
+        `Send email failed: ${error instanceof Error
+          ? error.message
+          : 'Unknown error'
+        }`,
+      );
+
       throw new InternalServerErrorException(
         'Không thể gửi email',
       );
