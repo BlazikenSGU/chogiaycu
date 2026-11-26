@@ -59,7 +59,8 @@ export const ModelName = {
   ProductImage: 'ProductImage',
   PasswordResetToken: 'PasswordResetToken',
   AuthRateLimit: 'AuthRateLimit',
-  ImageKitCleanupJob: 'ImageKitCleanupJob'
+  ImageKitCleanupJob: 'ImageKitCleanupJob',
+  EmailVerificationToken: 'EmailVerificationToken'
 } as const
 
 export type ModelName = (typeof ModelName)[keyof typeof ModelName]
@@ -86,7 +87,9 @@ export const UserScalarFieldEnum = {
   role: 'role',
   isActive: 'isActive',
   createdAt: 'createdAt',
-  updateAt: 'updateAt'
+  updateAt: 'updateAt',
+  emailVerifiedAt: 'emailVerifiedAt',
+  emailVerificationRequired: 'emailVerificationRequired'
 } as const
 
 export type UserScalarFieldEnum = (typeof UserScalarFieldEnum)[keyof typeof UserScalarFieldEnum]
@@ -209,6 +212,17 @@ export const ImageKitCleanupJobScalarFieldEnum = {
 } as const
 
 export type ImageKitCleanupJobScalarFieldEnum = (typeof ImageKitCleanupJobScalarFieldEnum)[keyof typeof ImageKitCleanupJobScalarFieldEnum]
+
+
+export const EmailVerificationTokenScalarFieldEnum = {
+  id: 'id',
+  userId: 'userId',
+  tokenHash: 'tokenHash',
+  expiresAt: 'expiresAt',
+  createdAt: 'createdAt'
+} as const
+
+export type EmailVerificationTokenScalarFieldEnum = (typeof EmailVerificationTokenScalarFieldEnum)[keyof typeof EmailVerificationTokenScalarFieldEnum]
 
 
 export const SortOrder = {

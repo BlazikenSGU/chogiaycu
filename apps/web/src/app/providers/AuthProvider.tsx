@@ -16,6 +16,7 @@ import type {
     AuthUser,
     LoginDto,
     RegisterDto,
+    RegisterResponse,
 } from '../../features/auth/types/auth.types';
 
 import { UserRole } from '../../features/auth/types/auth.types';
@@ -89,17 +90,8 @@ export function AuthProvider({
     );
 
     const register = useCallback(
-        async (data: RegisterDto): Promise<AuthUser> => {
-            const res = await authApi.register(data);
-
-            sessionVersion.current += 1;
-
-            tokenStore.set(res.accessToken);
-            localStorage.setItem(AUTH_SESSION_KEY, '1');
-            setUser(res.user);
-            setStatus('authenticated');
-
-            return res.user;
+        async (data: RegisterDto): Promise<RegisterResponse> => {
+            return authApi.register(data);
         }, [],
     );
 

@@ -35,3 +35,9 @@ export interface RefreshResponse {
 export interface LogoutResponse {
     message: string;
 }
+
+export interface RegisterResponse {
+    message: string;
+    email: string;
+    requiresEmailVerification: boolean;
+}

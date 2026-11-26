@@ -8,7 +8,7 @@ import { createHash } from 'node:crypto';
 import { PrismaService } from '../../prisma/prisma.service.js';
 import type { Prisma } from '../../generated/prisma/client.js';
 
-type RateLimitAction = 'login' | 'forgot' | 'register';
+type RateLimitAction = 'login' | 'forgot' | 'register' | 'verify-email';
 type RateLimitScope = 'email' | 'ip';
 
 type RateLimitKey = {
@@ -290,22 +290,27 @@ export class AuthRateLimitService {
         }
     }
 
-
     async consumeForgotRequest(
         email: string,
         ip: string,
+        action: 'forgot' | 'verify-email' = 'forgot',
     ): Promise<void> {
         const emailKey = this.makeKey({
-            action: 'forgot',
+            action,
             scope: 'email',
             value: email,
         });
 
         const ipKey = this.makeKey({
-            action: 'forgot',
+            action,
             scope: 'ip',
             value: ip,
         });
+
+        const isVerification = action === 'verify-email';
+
+        const maxEmailRequests = isVerification ? 3 : 5;
+        const maxIpRequests = isVerification ? 5 : 20;
 
         const dayMs = 24 * 60 * 60 * 1000;
         const cooldownMs = 60 * 1000;
@@ -356,8 +361,8 @@ export class AuthRateLimitService {
                 let code = '';
                 let message = '';
 
-                // Một email tối đa 5 yêu cầu / 24 giờ.
-                if (emailCount >= 5 && emailState) {
+                // Một email tối đa 5 yêu cầu / 24 giờ. gửi lại email xác thực thì 3 / 24h
+                if (emailCount >= maxEmailRequests && emailState) {
                     const remaining =
                         emailState.createdAt.getTime() +
                         dayMs -
@@ -368,13 +373,13 @@ export class AuthRateLimitService {
                         Math.ceil(remaining / 1000),
                     );
 
-                    code = 'FORGOT_DAILY_EMAIL_LIMIT';
-                    message =
-                        'Bạn đã đạt giới hạn 5 yêu cầu đặt lại mật khẩu trong 24 giờ.';
+                    code = isVerification ? 'VERIFY_EMAIL_DAILY_EMAIL_LIMIT' : 'FORGOT_DAILY_EMAIL_LIMIT';
+                    message = isVerification ? `Bạn đã đạt giới hạn ${maxEmailRequests} yêu cầu xác thực email trong 24 giờ.`
+                        : `Bạn đã đạt giới hạn ${maxEmailRequests} yêu cầu đặt lại mật khẩu trong 24 giờ.`;
                 }
 
-                // Một IP tối đa 20 yêu cầu / 24 giờ.
-                if (ipCount >= 20 && ipState) {
+                // Một IP tối đa 20 yêu cầu / 24 giờ. Yêu cầu gửi lại mail xác thực là 5/ 24h
+                if (ipCount >= maxIpRequests && ipState) {
                     const remaining =
                         ipState.createdAt.getTime() +
                         dayMs -
@@ -387,7 +392,9 @@ export class AuthRateLimitService {
 
                     if (ipRetryAfter > retryAfter) {
                         retryAfter = ipRetryAfter;
-                        code = 'FORGOT_DAILY_IP_LIMIT';
+                        code = isVerification
+                            ? 'VERIFY_EMAIL_DAILY_IP_LIMIT'
+                            : 'FORGOT_DAILY_IP_LIMIT';
                         message =
                             'Có quá nhiều yêu cầu từ mạng của bạn. Vui lòng thử lại sau.';
                     }
@@ -406,9 +413,13 @@ export class AuthRateLimitService {
 
                     if (cooldownRemaining > 0) {
                         retryAfter = cooldownRemaining;
-                        code = 'FORGOT_COOLDOWN';
-                        message =
-                            'Vui lòng đợi 60 giây giữa các yêu cầu đặt lại mật khẩu.';
+                        code = isVerification
+                            ? 'VERIFY_EMAIL_COOLDOWN'
+                            : 'FORGOT_COOLDOWN';
+
+                        message = isVerification
+                            ? 'Vui lòng đợi 60 giây giữa các yêu cầu xác thực email.'
+                            : 'Vui lòng đợi 60 giây giữa các yêu cầu đặt lại mật khẩu.';
                     }
                 }
 
