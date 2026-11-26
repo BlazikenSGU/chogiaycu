@@ -33,7 +33,14 @@ export function usePublicProducts(
 export function usePublicProduct(slug: string) {
   return useQuery({
     queryKey: productKeys.detail(slug),
-    queryFn: () => productsApi.getBySlug(slug),
+
+    queryFn: () =>
+      productsApi.getBySlug(slug),
+
     enabled: Boolean(slug),
+
+    staleTime: 60 * 1000,
+
+    gcTime: 5 * 60 * 1000,
   });
 }
