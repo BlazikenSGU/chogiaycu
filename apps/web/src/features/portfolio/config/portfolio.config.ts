@@ -1,6 +1,5 @@
 import type {
     PortfolioProfile,
-    SkillCategory,
     CareerItem,
     Education,
     Certification,
@@ -12,7 +11,7 @@ export const PROFILE: PortfolioProfile = {
 
     role: 'Full Stack Developer',
 
-    avatarUrl: '/portfolio/avatar.webp',
+    avatarUrl: '',
 
     location: 'Việt Nam',
 
@@ -20,9 +19,9 @@ export const PROFILE: PortfolioProfile = {
 
     email: '',
 
-    resumeUrl: '/portfolio/resume.pdf',
+    resumeUrl: '',
 
-    resumeCoverUrl: '/portfolio/resume-cover.webp',
+    resumeCoverUrl: '',
 
     biography: [
         'Tôi quan tâm đến phát triển phần mềm và xây dựng các ứng dụng web hiện đại, tập trung vào trải nghiệm người dùng và khả năng mở rộng hệ thống.',
@@ -49,68 +48,6 @@ export const NAVIGATION = [
     { label: 'Projects', href: '#projects' },
     { label: 'Ecosystem', href: '#ecosystem' },
     { label: 'Contact', href: '#contact' },
-];
-
-export const SKILL_CATEGORIES: SkillCategory[] = [
-    {
-        id: 'development',
-        title: 'Development',
-        description:
-            'Technologies used in application development.',
-
-        skills: [
-            { name: 'JavaScript / TypeScript' },
-            { name: 'React' },
-            { name: 'Node.js' },
-            { name: 'NestJS' },
-            { name: 'REST API' },
-            { name: 'Tailwind CSS' },
-        ],
-    },
-    {
-        id: 'database',
-        title: 'Database',
-        description:
-            'Database and data management technologies.',
-
-        skills: [
-            { name: 'PostgreSQL' },
-            { name: 'Prisma ORM' },
-            { name: 'Neon Database' },
-        ],
-    },
-    {
-        id: 'architecture',
-        title: 'Architecture',
-        description:
-            'Software architecture and development practices.',
-
-        skills: [
-            { name: 'Design Patterns' },
-            { name: 'Modular Architecture' },
-            { name: 'JWT Authentication' },
-            { name: 'Git & GitHub' },
-        ],
-    },
-];
-
-export const TECHNOLOGIES = [
-    'React',
-    'TypeScript',
-    'JavaScript',
-    'NestJS',
-    'Node.js',
-    'PostgreSQL',
-    'Prisma',
-    'Tailwind CSS',
-    'Vite',
-    'TanStack Query',
-    'Zustand',
-    'GitHub',
-    'Cloudflare Pages',
-    'ImageKit',
-    'Resend',
-    'Neon',
 ];
 
 export const CAREER: CareerItem[] = [];

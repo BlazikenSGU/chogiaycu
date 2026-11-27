@@ -4,25 +4,16 @@ import {
   BriefcaseBusiness,
   MapPin,
   Mail,
-  Globe,
   UserRound,
 } from 'lucide-react';
 
 import {
-  SiGithub,
-  SiLinkerd,
-} from 'react-icons/si';
+  SOCIAL_ICONS,
+} from '../../config/portfolio-icons.config';
 
 import { PROFILE } from '../../config/portfolio.config';
 
 import PortfolioCard from '../shared/PortfolioCard';
-
-const SOCIAL_ICONS = {
-  github: SiGithub,
-  linkedin: SiLinkerd,
-  email: Mail,
-  website: Globe,
-};
 
 export default function AboutSection() {
   const facts = [

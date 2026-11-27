@@ -1,22 +1,38 @@
-export type SkillLevel =
-  | 'Learning'
-  | 'Intermediate'
-  | 'Advanced'
-  | 'Expert';
+export type TechnologyIcon =
+  | 'react'
+  | 'typescript'
+  | 'javascript'
+  | 'tailwindcss'
+  | 'vite'
+  | 'tanstack-query'
+  | 'zustand'
+  | 'nodejs'
+  | 'nestjs'
+  | 'rest-api'
+  | 'jwt'
+  | 'postgresql'
+  | 'prisma'
+  | 'neon'
+  | 'git'
+  | 'github'
+  | 'cloudflare'
+  | 'imagekit'
+  | 'resend'
+  | 'design-patterns'
+  | 'modular-architecture';
 
-export interface Skill {
+export interface Technology {
+  id: string;
   name: string;
-  level?: SkillLevel;
-  progress?: number;
+  icon: TechnologyIcon;
 }
 
 export interface SkillCategory {
   id: string;
   title: string;
   description: string;
-  skills: Skill[];
+  skills: Technology[];
 }
-
 export interface SocialLink {
   type: 'github' | 'linkedin' | 'email' | 'website';
   label: string;

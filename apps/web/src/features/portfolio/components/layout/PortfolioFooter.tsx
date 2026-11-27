@@ -1,24 +1,10 @@
 import { Link } from 'react-router-dom';
-
-import {
-  Mail,
-  Globe,
-  ArrowUp,
-} from 'lucide-react';
-
-import {
-  SiGithub,
-  SiLinkerd,
-} from 'react-icons/si';
-
+import { ArrowUp } from 'lucide-react';
 import { PROFILE } from '../../config/portfolio.config';
 
-const SOCIAL_ICONS = {
-  github: SiGithub,
-  linkedin: SiLinkerd,
-  email: Mail,
-  website: Globe,
-};
+import {
+  SOCIAL_ICONS,
+} from '../../config/portfolio-icons.config';
 
 export default function PortfolioFooter() {
   return (

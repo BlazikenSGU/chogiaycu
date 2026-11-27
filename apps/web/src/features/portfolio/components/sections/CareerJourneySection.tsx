@@ -1,21 +1,16 @@
-import { useState } from 'react';
 
 import {
   BriefcaseBusiness,
   GraduationCap,
   Code2,
-  Sparkles,
 } from 'lucide-react';
 
 import {
   CAREER,
-  SKILL_CATEGORIES,
 } from '../../config/portfolio.config';
 
 import SectionHeading from '../shared/SectionHeading';
 import PortfolioCard from '../shared/PortfolioCard';
-import SkillTabs from '../shared/SkillTabs';
-import SkillProgress from '../shared/SkillProgress';
 
 const CAREER_ICONS = {
   work: BriefcaseBusiness,
@@ -24,27 +19,18 @@ const CAREER_ICONS = {
 };
 
 export default function CareerJourneySection() {
-  const [activeCategory, setActiveCategory] =
-    useState(SKILL_CATEGORIES[0]?.id ?? '');
-
-  const category = SKILL_CATEGORIES.find(
-    (item) => item.id === activeCategory,
-  );
 
   return (
     <section id="career" className="pf-section">
       <SectionHeading
-        eyebrow="Journey & Expertise"
-        title="My Path & Skills"
-        description="Explore my professional journey and the skills I've developed along the way."
+        eyebrow="My Journey"
+        title="Career Journey"
+        description="Explore my professional journey, work experience and career milestones."
       />
 
-      <div className="grid items-start gap-10
-        lg:grid-cols-2">
-
+      <div className="grid items-start">
         <div>
-          <h3 className="mb-6 flex items-center
-            gap-2 text-lg font-semibold">
+          <h3 className="mb-6 flex items-center gap-2 text-lg font-semibold">
 
             <BriefcaseBusiness size={20} />
 
@@ -103,47 +89,6 @@ export default function CareerJourneySection() {
                 );
               })}
             </div>
-          )}
-        </div>
-
-        <div>
-          <h3 className="mb-6 flex items-center
-            gap-2 text-lg font-semibold">
-
-            <Sparkles size={20} />
-
-            Skills by Category
-          </h3>
-
-          <SkillTabs
-            tabs={SKILL_CATEGORIES.map((item) => ({
-              id: item.id,
-              label: item.title,
-            }))}
-            activeTab={activeCategory}
-            onChange={setActiveCategory}
-          />
-
-          {category && (
-            <PortfolioCard className="mt-5 p-6">
-              <h4 className="font-semibold">
-                {category.title} Skills
-              </h4>
-
-              <p className="pf-text-muted
-                mt-2 text-xs leading-5">
-                {category.description}
-              </p>
-
-              <div className="mt-6 space-y-5">
-                {category.skills.map((skill) => (
-                  <SkillProgress
-                    key={skill.name}
-                    skill={skill}
-                  />
-                ))}
-              </div>
-            </PortfolioCard>
           )}
         </div>
       </div>
