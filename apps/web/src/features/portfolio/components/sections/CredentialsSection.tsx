@@ -29,7 +29,13 @@ export default function CredentialsSection() {
         Academic Background
       </h3>
 
-      <div className="grid gap-5 md:grid-cols-2">
+      <div
+        className={
+          EDUCATION.length === 1
+            ? 'mx-auto grid max-w-3xl gap-5'
+            : 'grid gap-5 md:grid-cols-2'
+        }
+      >
         {EDUCATION.map((item) => (
           <PortfolioCard
             key={item.id}
@@ -111,114 +117,118 @@ export default function CredentialsSection() {
         </PortfolioCard>
       )}
 
-      <div className="mt-14 text-center">
-        <span className="pf-badge">
-          PROFESSIONAL
-        </span>
+      {CERTIFICATIONS.length > 0 && (
+        <>
+          <div className="mt-14 text-center">
+            <span className="pf-badge">
+              PROFESSIONAL
+            </span>
 
-        <h3 className="mt-3 text-xl font-semibold">
-          Certifications & Training
-        </h3>
-      </div>
+            <h3 className="mt-3 text-xl font-semibold">
+              Certifications & Training
+            </h3>
+          </div>
 
-      <div className="mt-6 grid gap-4
+          <div className="mt-6 grid gap-4
         sm:grid-cols-2 lg:grid-cols-4">
 
-        {CERTIFICATIONS.map((item) => (
-          <PortfolioCard
-            key={item.id}
-            className="overflow-hidden p-3"
-          >
-            <div className="pf-muted flex aspect-video
+            {CERTIFICATIONS.map((item) => (
+              <PortfolioCard
+                key={item.id}
+                className="overflow-hidden p-3"
+              >
+                <div className="pf-muted flex aspect-video
               items-center justify-center
               overflow-hidden rounded-lg">
 
-              {item.imageUrl ? (
-                <img
-                  src={item.imageUrl}
-                  alt={item.name}
-                  loading="lazy"
-                  className="h-full w-full object-cover"
-                />
-              ) : (
-                <Award
-                  size={40}
-                  className="pf-text-muted"
-                />
-              )}
-            </div>
+                  {item.imageUrl ? (
+                    <img
+                      src={item.imageUrl}
+                      alt={item.name}
+                      loading="lazy"
+                      className="h-full w-full object-cover"
+                    />
+                  ) : (
+                    <Award
+                      size={40}
+                      className="pf-text-muted"
+                    />
+                  )}
+                </div>
 
-            <h4 className="mt-4 text-sm font-semibold">
-              {item.name}
-            </h4>
+                <h4 className="mt-4 text-sm font-semibold">
+                  {item.name}
+                </h4>
 
-            <p className="pf-text-muted mt-1 text-xs">
-              {item.issuer}
-            </p>
+                <p className="pf-text-muted mt-1 text-xs">
+                  {item.issuer}
+                </p>
 
-            <p className="pf-text-muted mt-2 text-xs">
-              {item.year}
-            </p>
+                <p className="pf-text-muted mt-2 text-xs">
+                  {item.year}
+                </p>
 
-            <div className="mt-4 flex flex-wrap gap-1">
-              {item.skills.map((skill) => (
-                <span key={skill} className="pf-badge">
-                  {skill}
-                </span>
-              ))}
-            </div>
+                <div className="mt-4 flex flex-wrap gap-1">
+                  {item.skills.map((skill) => (
+                    <span key={skill} className="pf-badge">
+                      {skill}
+                    </span>
+                  ))}
+                </div>
 
-            {item.credentialUrl && (
-              <a
-                href={item.credentialUrl}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="mt-4 inline-flex items-center
+                {item.credentialUrl && (
+                  <a
+                    href={item.credentialUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="mt-4 inline-flex items-center
                   gap-1 text-xs font-medium"
-              >
-                View Credential
-                <ArrowUpRight size={13} />
-              </a>
-            )}
-          </PortfolioCard>
-        ))}
-      </div>
+                  >
+                    View Credential
+                    <ArrowUpRight size={13} />
+                  </a>
+                )}
+              </PortfolioCard>
+            ))}
+          </div>
 
-      {CERTIFICATIONS.length === 0 && (
-        <PortfolioCard className="p-8 text-center">
-          <Award
-            size={36}
-            className="pf-text-muted mx-auto"
-          />
+          {CERTIFICATIONS.length === 0 && (
+            <PortfolioCard className="p-8 text-center">
+              <Award
+                size={36}
+                className="pf-text-muted mx-auto"
+              />
 
-          <p className="pf-text-muted mt-3 text-sm">
-            Certifications will be updated.
-          </p>
-        </PortfolioCard>
-      )}
+              <p className="pf-text-muted mt-3 text-sm">
+                Certifications will be updated.
+              </p>
+            </PortfolioCard>
+          )}
 
-      <div className="pf-muted mt-10 rounded-xl
+          <div className="pf-muted mt-10 rounded-xl
         px-6 py-8 text-center">
 
-        <h3 className="font-semibold">
-          Continuous Learner
-        </h3>
+            <h3 className="font-semibold">
+              Continuous Learner
+            </h3>
 
-        <p className="pf-text-muted mx-auto mt-2
+            <p className="pf-text-muted mx-auto mt-2
           max-w-lg text-sm leading-6">
 
-          Committed to continuous learning,
-          emerging technologies and professional
-          development.
-        </p>
+              Committed to continuous learning,
+              emerging technologies and professional
+              development.
+            </p>
 
-        <a
-          href="#contact"
-          className="pf-button pf-button-outline mt-4"
-        >
-          Let's Connect and Learn Together
-        </a>
-      </div>
+            <a
+              href="#contact"
+              className="pf-button pf-button-outline mt-4"
+            >
+              Let's Connect and Learn Together
+            </a>
+          </div>
+        </>
+      )}
     </section>
   );
 }

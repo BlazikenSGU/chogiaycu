@@ -30,12 +30,6 @@ export default function CareerJourneySection() {
 
       <div className="grid items-start">
         <div>
-          <h3 className="mb-6 flex items-center gap-2 text-lg font-semibold">
-
-            <BriefcaseBusiness size={20} />
-
-            Career Journey
-          </h3>
 
           {CAREER.length === 0 ? (
             <PortfolioCard className="p-8 text-center">

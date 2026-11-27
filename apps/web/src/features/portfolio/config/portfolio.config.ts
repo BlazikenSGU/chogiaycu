@@ -211,41 +211,6 @@ export const PROJECTS: PortfolioProject[] = [
 
     demoUrl: '/',
   },
-
-  {
-    id: 'product-manager',
-
-    name: 'Product Management',
-
-    category: 'Reusable Management Module',
-
-    description:
-      'A reusable product management module supporting products, categories, brands, and image management, designed for future independent deployment.',
-
-    technologies: [
-      'React',
-      'NestJS',
-      'ImageKit',
-    ],
-  },
-
-  {
-    id: 'identity',
-
-    name: 'Identity & Authentication',
-
-    category: 'Security Module',
-
-    description:
-      'An authentication module supporting JWT, refresh tokens, email verification, password recovery, and user account management.',
-
-    technologies: [
-      'NestJS',
-      'JWT',
-      'PostgreSQL',
-      'Resend',
-    ],
-  },
 ];
 
 export const RESUME_FACTS = [
