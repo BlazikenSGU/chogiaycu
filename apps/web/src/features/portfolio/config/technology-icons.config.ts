@@ -13,6 +13,30 @@ import {
   SiGit,
   SiGithub,
   SiCloudflare,
+  SiPhp,
+  SiPython,
+  SiLaravel,
+  SiFastapi,
+  SiFlask,
+  SiCodeigniter,
+  SiVuedotjs,
+  SiNextdotjs,
+  SiHtml5,
+  SiBootstrap,
+  SiAlpinedotjs,
+  SiMysql,
+  SiMariadb,
+  SiRedis,
+  SiMongodb,
+  SiElasticsearch,
+  SiGitlab,
+  SiDocker,
+  SiNginx,
+  SiKubernetes,
+  SiPostman,
+  SiGithubactions,
+  SiComposer,
+  SiCloudinary,
 } from 'react-icons/si';
 
 import {
@@ -23,6 +47,9 @@ import {
   Layers,
   Boxes,
   Code2,
+  Workflow,
+  ShieldCheck,
+  Building2,
 } from 'lucide-react';
 
 import type { ElementType } from 'react';
@@ -30,6 +57,11 @@ import type { ElementType } from 'react';
 import type {
   TechnologyIcon,
 } from '../types/portfolio.types';
+
+import {
+  FaCss3Alt,
+  FaAws,
+} from 'react-icons/fa';
 
 interface TechnologyIconConfig {
   icon: ElementType;
@@ -140,5 +172,169 @@ export const TECHNOLOGY_ICONS = {
   'modular-architecture': {
     icon: Layers,
     color: '#0EA5E9',
+  },
+  php: {
+    icon: SiPhp,
+    color: '#777BB4',
+  },
+
+  python: {
+    icon: SiPython,
+    color: '#3776AB',
+  },
+
+  laravel: {
+    icon: SiLaravel,
+    color: '#FF2D20',
+  },
+
+  fastapi: {
+    icon: SiFastapi,
+    color: '#009688',
+  },
+
+  flask: {
+    icon: SiFlask,
+    color: 'var(--pf-foreground)',
+  },
+
+  frappe: {
+    icon: Layers,
+    color: '#2490EF',
+  },
+
+  erpnext: {
+    icon: Boxes,
+    color: '#2490EF',
+  },
+
+  slim: {
+    icon: Code2,
+    color: '#64748B',
+  },
+
+  codeigniter: {
+    icon: SiCodeigniter,
+    color: '#EF4223',
+  },
+
+  vue: {
+    icon: SiVuedotjs,
+    color: '#42B883',
+  },
+
+  nextjs: {
+    icon: SiNextdotjs,
+    color: 'var(--pf-foreground)',
+  },
+
+  html5: {
+    icon: SiHtml5,
+    color: '#E34F26',
+  },
+
+  css3: {
+    icon: FaCss3Alt,
+    color: '#1572B6',
+  },
+
+  bootstrap: {
+    icon: SiBootstrap,
+    color: '#7952B3',
+  },
+
+  alpinejs: {
+    icon: SiAlpinedotjs,
+    color: '#8BC0D0',
+  },
+
+  blade: {
+    icon: SiLaravel,
+    color: '#FF2D20',
+  },
+
+  mysql: {
+    icon: SiMysql,
+    color: '#4479A1',
+  },
+
+  mariadb: {
+    icon: SiMariadb,
+    color: '#C0765A',
+  },
+
+  redis: {
+    icon: SiRedis,
+    color: '#DC382D',
+  },
+
+  mongodb: {
+    icon: SiMongodb,
+    color: '#47A248',
+  },
+
+  elasticsearch: {
+    icon: SiElasticsearch,
+    color: '#FEC514',
+  },
+
+  gitlab: {
+    icon: SiGitlab,
+    color: '#FC6D26',
+  },
+
+  docker: {
+    icon: SiDocker,
+    color: '#2496ED',
+  },
+
+  nginx: {
+    icon: SiNginx,
+    color: '#009639',
+  },
+
+  kubernetes: {
+    icon: SiKubernetes,
+    color: '#326CE5',
+  },
+
+  postman: {
+    icon: SiPostman,
+    color: '#FF6C37',
+  },
+
+  cicd: {
+    icon: Workflow,
+    color: '#8B5CF6',
+  },
+
+  'github-actions': {
+    icon: SiGithubactions,
+    color: '#2088FF',
+  },
+
+  composer: {
+    icon: SiComposer,
+    color: '#885630',
+  },
+
+  'aws-s3': {
+    icon: FaAws,
+    color: '#FF9900',
+  },
+
+  cloudinary: {
+    icon: SiCloudinary,
+    color: '#3448C5',
+  },
+
+  rbac: {
+    icon: ShieldCheck,
+    color: '#16A34A',
+  },
+
+  'multi-tenant': {
+    icon: Building2,
+    color: '#2563EB',
   },
 } satisfies Record<TechnologyIcon, TechnologyIconConfig>;

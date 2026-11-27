@@ -49,7 +49,7 @@ export default function AboutSection() {
               <img
                 src={PROFILE.avatarUrl}
                 alt={PROFILE.fullName}
-                className="h-full w-full object-cover"
+                className="h-full w-3/4 object-cover"
               />
             ) : (
               <UserRound

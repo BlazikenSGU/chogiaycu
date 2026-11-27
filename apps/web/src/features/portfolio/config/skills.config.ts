@@ -1,170 +1,144 @@
 import type {
   SkillCategory,
+  Technology,
+  TechnologyIcon,
 } from '../types/portfolio.types';
+
+function technology(
+  icon: TechnologyIcon,
+  name: string,
+): Technology {
+  return {
+    id: icon,
+    name,
+    icon,
+  };
+}
 
 export const SKILL_CATEGORIES: SkillCategory[] = [
   {
-    id: 'frontend',
-    title: 'Frontend Development',
+    id: 'backend',
+
+    title: 'Backend Development',
+
     description:
-      'Modern frontend frameworks and libraries.',
+      'Backend frameworks, APIs and enterprise applications.',
 
     skills: [
-      {
-        id: 'react',
-        name: 'React',
-        icon: 'react',
-      },
-      {
-        id: 'typescript',
-        name: 'TypeScript',
-        icon: 'typescript',
-      },
-      {
-        id: 'javascript',
-        name: 'JavaScript',
-        icon: 'javascript',
-      },
-      {
-        id: 'tailwindcss',
-        name: 'Tailwind CSS',
-        icon: 'tailwindcss',
-      },
-      {
-        id: 'vite',
-        name: 'Vite',
-        icon: 'vite',
-      },
-      {
-        id: 'tanstack-query',
-        name: 'TanStack Query',
-        icon: 'tanstack-query',
-      },
-      {
-        id: 'zustand',
-        name: 'Zustand',
-        icon: 'zustand',
-      },
+      technology('php', 'PHP'),
+      technology('python', 'Python'),
+      technology('laravel', 'Laravel'),
+      technology('fastapi', 'FastAPI'),
+      technology('flask', 'Flask'),
+      technology('frappe', 'Frappe Framework'),
+      technology('erpnext', 'ERPNext'),
+      technology('nodejs', 'Node.js'),
+      technology('nestjs', 'NestJS'),
+      technology('slim', 'Slim Framework'),
+      technology('codeigniter', 'CodeIgniter'),
+      technology('rest-api', 'RESTful APIs'),
+      technology('jwt', 'JWT'),
     ],
   },
 
   {
-    id: 'backend',
-    title: 'Backend Development',
+    id: 'frontend',
+
+    title: 'Frontend Development',
+
     description:
-      'Backend frameworks, APIs and authentication.',
+      'Modern frontend frameworks and UI technologies.',
 
     skills: [
-      {
-        id: 'nodejs',
-        name: 'Node.js',
-        icon: 'nodejs',
-      },
-      {
-        id: 'nestjs',
-        name: 'NestJS',
-        icon: 'nestjs',
-      },
-      {
-        id: 'rest-api',
-        name: 'REST API',
-        icon: 'rest-api',
-      },
-      {
-        id: 'jwt',
-        name: 'JWT',
-        icon: 'jwt',
-      },
+      technology('javascript', 'JavaScript'),
+      technology('typescript', 'TypeScript'),
+      technology('react', 'React.js'),
+      technology('vue', 'Vue.js'),
+      technology('nextjs', 'Next.js'),
+      technology('html5', 'HTML5'),
+      technology('css3', 'CSS3'),
+      technology('tailwindcss', 'Tailwind CSS'),
+      technology('bootstrap', 'Bootstrap'),
+      technology('alpinejs', 'Alpine.js'),
+      technology('blade', 'Blade'),
+      technology('vite', 'Vite'),
+      technology('tanstack-query', 'TanStack Query'),
+      technology('zustand', 'Zustand'),
     ],
   },
 
   {
     id: 'database',
-    title: 'Database & ORM',
+
+    title: 'Database & Search',
+
     description:
-      'Database technologies and data management.',
+      'Database systems, caching, search engines and ORM.',
 
     skills: [
-      {
-        id: 'postgresql',
-        name: 'PostgreSQL',
-        icon: 'postgresql',
-      },
-      {
-        id: 'prisma',
-        name: 'Prisma ORM',
-        icon: 'prisma',
-      },
-      {
-        id: 'neon',
-        name: 'Neon Database',
-        icon: 'neon',
-      },
+      technology('mysql', 'MySQL'),
+      technology('postgresql', 'PostgreSQL'),
+      technology('mariadb', 'MariaDB'),
+      technology('redis', 'Redis'),
+      technology('mongodb', 'MongoDB'),
+      technology('elasticsearch', 'Elasticsearch'),
+      technology('prisma', 'Prisma ORM'),
+      technology('neon', 'Neon Database'),
+    ],
+  },
+
+  {
+    id: 'devops',
+
+    title: 'DevOps & Development Tools',
+
+    description:
+      'Development, deployment and automation workflows.',
+
+    skills: [
+      technology('git', 'Git'),
+      technology('github', 'GitHub'),
+      technology('gitlab', 'GitLab'),
+      technology('docker', 'Docker'),
+      technology('nginx', 'Nginx'),
+      technology('kubernetes', 'Kubernetes'),
+      technology('postman', 'Postman'),
+      technology('cicd', 'CI/CD'),
+      technology('github-actions', 'GitHub Actions'),
+      technology('composer', 'Composer'),
     ],
   },
 
   {
     id: 'cloud',
-    title: 'Cloud & Deployment',
+
+    title: 'Cloud & Services',
+
     description:
-      'Cloud platforms and application services.',
+      'Cloud platforms and third-party application services.',
 
     skills: [
-      {
-        id: 'cloudflare',
-        name: 'Cloudflare Pages',
-        icon: 'cloudflare',
-      },
-      {
-        id: 'imagekit',
-        name: 'ImageKit',
-        icon: 'imagekit',
-      },
-      {
-        id: 'resend',
-        name: 'Resend',
-        icon: 'resend',
-      },
-    ],
-  },
-
-  {
-    id: 'tools',
-    title: 'Development Tools',
-    description:
-      'Version control and development workflows.',
-
-    skills: [
-      {
-        id: 'git',
-        name: 'Git',
-        icon: 'git',
-      },
-      {
-        id: 'github',
-        name: 'GitHub',
-        icon: 'github',
-      },
+      technology('aws-s3', 'AWS S3'),
+      technology('cloudinary', 'Cloudinary'),
+      technology('cloudflare', 'Cloudflare Pages'),
+      technology('imagekit', 'ImageKit'),
+      technology('resend', 'Resend'),
     ],
   },
 
   {
     id: 'architecture',
+
     title: 'Software Architecture',
+
     description:
-      'Software design and architecture practices.',
+      'Software architecture and enterprise design practices.',
 
     skills: [
-      {
-        id: 'design-patterns',
-        name: 'Design Patterns',
-        icon: 'design-patterns',
-      },
-      {
-        id: 'modular-architecture',
-        name: 'Modular Architecture',
-        icon: 'modular-architecture',
-      },
+      technology('design-patterns', 'Design Patterns'),
+      technology('modular-architecture', 'Modular Architecture'),
+      technology('multi-tenant', 'Multi-tenant SaaS'),
+      technology('rbac', 'RBAC'),
     ],
   },
 ];
