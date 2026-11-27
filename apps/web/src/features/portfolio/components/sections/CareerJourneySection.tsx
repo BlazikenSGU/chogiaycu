@@ -1,16 +1,14 @@
-
 import {
   BriefcaseBusiness,
   GraduationCap,
   Code2,
 } from 'lucide-react';
 
-import {
-  CAREER,
-} from '../../config/portfolio.config';
+import { CAREER } from '../../config/portfolio.config';
 
 import SectionHeading from '../shared/SectionHeading';
 import PortfolioCard from '../shared/PortfolioCard';
+import CompanyLogo from '../shared/CompanyLogo';
 
 const CAREER_ICONS = {
   work: BriefcaseBusiness,
@@ -19,7 +17,6 @@ const CAREER_ICONS = {
 };
 
 export default function CareerJourneySection() {
-
   return (
     <section id="career" className="pf-section">
       <SectionHeading
@@ -28,39 +25,58 @@ export default function CareerJourneySection() {
         description="Explore my professional journey, work experience and career milestones."
       />
 
-      <div className="grid items-start">
-        <div>
+      {CAREER.length === 0 ? (
+        <PortfolioCard className="p-8 text-center">
+          <BriefcaseBusiness
+            size={32}
+            className="pf-text-muted mx-auto"
+          />
 
-          {CAREER.length === 0 ? (
-            <PortfolioCard className="p-8 text-center">
-              <BriefcaseBusiness
-                size={32}
-                className="pf-text-muted mx-auto"
-              />
+          <p className="pf-text-muted mt-3 text-sm">
+            Career information will be updated.
+          </p>
+        </PortfolioCard>
+      ) : (
+        <div
+          className="
+            pf-border ml-4 space-y-6
+            border-l-2 pl-7
+          "
+        >
+          {CAREER.map((item) => {
+            const Icon = CAREER_ICONS[item.type];
 
-              <p className="pf-text-muted mt-3 text-sm">
-                Career information will be updated.
-              </p>
-            </PortfolioCard>
-          ) : (
-            <div className="pf-border ml-4
-              space-y-6 border-l-2 pl-7">
+            return (
+              <div
+                key={item.id}
+                className="relative"
+              >
+                {/* Timeline Icon */}
+                <div
+                  className="
+                    absolute -left-10 top-3
+                    flex h-6 w-6 items-center
+                    justify-center rounded-full
+                    bg-[var(--pf-primary)]
+                    text-[var(--pf-primary-foreground)]
+                  "
+                >
+                  <Icon size={13} />
+                </div>
 
-              {CAREER.map((item) => {
-                const Icon = CAREER_ICONS[item.type];
+                {/* Career Card */}
+                <PortfolioCard className="p-5">
 
-                return (
-                  <div key={item.id} className="relative">
-                    <div className="absolute -left-10
-                      top-3 flex h-6 w-6 items-center
-                      justify-center rounded-full
-                      bg-[var(--pf-primary)]
-                      text-[var(--pf-primary-foreground)]">
+                  {/* Company Information */}
+                  <div className="flex items-center gap-4">
 
-                      <Icon size={13} />
-                    </div>
+                    <CompanyLogo
+                      name={item.organization}
+                      logoUrl={item.logoUrl}
+                    />
 
-                    <PortfolioCard className="p-5">
+                    <div className="min-w-0 flex-1">
+
                       <span className="pf-badge">
                         {item.year}
                       </span>
@@ -69,23 +85,34 @@ export default function CareerJourneySection() {
                         {item.title}
                       </h4>
 
-                      <p className="pf-text-muted
-                        mt-1 text-xs">
+                      <p
+                        className="
+                          pf-text-muted mt-1
+                          text-sm
+                        "
+                      >
                         {item.organization}
                       </p>
 
-                      <p className="pf-text-muted
-                        mt-3 text-sm leading-6">
-                        {item.description}
-                      </p>
-                    </PortfolioCard>
+                    </div>
                   </div>
-                );
-              })}
-            </div>
-          )}
+
+                  {/* Job Description */}
+                  <p
+                    className="
+                      pf-text-muted mt-4
+                      text-sm leading-6
+                    "
+                  >
+                    {item.description}
+                  </p>
+
+                </PortfolioCard>
+              </div>
+            );
+          })}
         </div>
-      </div>
+      )}
     </section>
   );
 }

@@ -91,6 +91,7 @@ export interface CareerItem {
   organization: string;
   description: string;
   type: 'work' | 'education' | 'project';
+  logoUrl?: string;
 }
 
 export interface Education {

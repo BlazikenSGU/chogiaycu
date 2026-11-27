@@ -24,7 +24,7 @@ export const PROFILE: PortfolioProfile = {
   resumeCoverUrl: '',
 
   biography: [
-    'With over 3 years of experience in enterprise software development, my expertise spans Ecommerce, ERP, CRM, and SaaS platforms, with a strong focus on software architecture, system integration, and performance optimization.',
+    'With over 3 years of experience in enterprise software development, my expertise spans Ecommerce, ERP, CRM, HRM, TMS, LMS, Internal Systems and SaaS platforms, with a strong focus on software architecture, system integration, and performance optimization.',
     'My professional goal is to take end-to-end ownership of software systems — from business analysis and architectural design to development, infrastructure, deployment, and operations — delivering scalable, reliable, and sustainable solutions that drive business value.'
   ],
 
@@ -64,7 +64,7 @@ export const CAREER: CareerItem[] = [
     title: 'Full Stack Developer',
     organization: 'S3work Technology',
     type: 'work',
-
+    logoUrl: '/portfolio/companies/s3work.webp',
     description:
       'Developed enterprise applications using Python, Frappe, PHP, and Laravel. Customized ERPNext modules for ERP, CRM, HRMS, inventory, purchasing, and sales. Contributed to multi-tenant SaaS architecture, role-based access control, RESTful APIs, and CI/CD workflows.',
   },
@@ -75,7 +75,7 @@ export const CAREER: CareerItem[] = [
     title: 'Backend Developer',
     organization: 'Namperfume.net',
     type: 'work',
-
+    logoUrl: '/portfolio/companies/namperfume.webp',
     description:
       'Developed and maintained internal business applications using PHP, Laravel, and CodeIgniter. Implemented HR management, attendance, payroll, accounting, procurement, sales, inventory, and promotional program features.',
   },
@@ -86,7 +86,7 @@ export const CAREER: CareerItem[] = [
     title: 'Backend Developer Intern',
     organization: 'Sapo Technology JSC',
     type: 'work',
-
+    logoUrl: '/portfolio/companies/sapo.webp',
     description:
       'Applied software development knowledge to build and deliver application modules based on client requirements.',
   },
