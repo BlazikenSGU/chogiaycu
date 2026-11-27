@@ -12,6 +12,7 @@ import MobileNavigation from '../components/MobileNavigation';
 
 import { useHomeFilters } from '../hooks/useHomeFilters';
 import Footer from '../../../components/layout/Footer';
+import EcosystemSection from '../../ecosystem/components/EcosystemSection';
 
 export default function HomePage() {
   const filters = useHomeFilters();
@@ -46,6 +47,8 @@ export default function HomePage() {
           onPageChange={filters.setPage}
           onReset={filters.resetFilters}
         />
+
+         <EcosystemSection />
 
       </div>
       <Footer />
