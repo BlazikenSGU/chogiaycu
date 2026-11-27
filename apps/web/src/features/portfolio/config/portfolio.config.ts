@@ -24,11 +24,8 @@ export const PROFILE: PortfolioProfile = {
   resumeCoverUrl: '',
 
   biography: [
-    'I am a Full Stack Developer with over 3 years of professional experience building enterprise applications using PHP, Python, Laravel, and React.js.',
-
-    'My professional experience includes developing ERP, CRM, HRMS, and multi-tenant SaaS applications, building RESTful APIs, optimizing database performance, and implementing secure authentication and authorization systems.',
-
-    'I am passionate about modular software architecture, reusable components, and scalable enterprise solutions. I focus on building maintainable applications that solve real-world business problems.',
+    'With over 3 years of experience in enterprise software development, my expertise spans Ecommerce, ERP, CRM, and SaaS platforms, with a strong focus on software architecture, system integration, and performance optimization.',
+    'My professional goal is to take end-to-end ownership of software systems — from business analysis and architectural design to development, infrastructure, deployment, and operations — delivering scalable, reliable, and sustainable solutions that drive business value.'
   ],
 
   socials: [
@@ -98,16 +95,12 @@ export const CAREER: CareerItem[] = [
 export const EDUCATION: Education[] = [
   {
     id: 'saigon-university',
-
     degree: 'Engineer of Information Technology',
-
     school: 'Saigon University',
-
+    imageUrl: '/portfolio/education/education.webp',
     period: 'Sep 2019 - Jun 2023',
-
     description:
       'Majored in Software Engineering, with a focus on software development and information technology.',
-
     highlights: [
       'Major: Software Engineering',
       'Degree: Engineer of Information Technology',
@@ -121,14 +114,11 @@ export const CERTIFICATIONS: Certification[] = [];
 export const PROJECTS: PortfolioProject[] = [
   {
     id: 's3work-system',
-
     name: 'S3Work System Business Management',
-
+    imageUrl: '/portfolio/projects/s3work.webp',
     category: 'Enterprise ERP & Multi-tenant SaaS',
-
     description:
       'An enterprise management platform built on the Frappe and ERPNext ecosystem, supporting ERP, CRM, HRMS, and multi-tenant business operations. Contributed as a Full Stack Developer and Development Team Lead, implementing tenant-level data isolation and optimizing database queries and API response times from 4,000ms to 200ms.',
-
     technologies: [
       'Python',
       'Frappe Framework',
@@ -143,14 +133,11 @@ export const PROJECTS: PortfolioProject[] = [
 
   {
     id: 's3-onsuite',
-
     name: 'S3 Onsuite',
-
+    imageUrl: '/portfolio/projects/s3-onsuite.webp',
     category: 'Enterprise Business Management',
-
     description:
       'An enterprise management platform for a US-based client, integrating HRM, payroll, accounting, POS, and Omnichannel communication. Developed backend modules, independent Python services, RESTful APIs, Elasticsearch integrations, and automated data synchronization workflows.',
-
     technologies: [
       'PHP',
       'Laravel',
@@ -166,14 +153,11 @@ export const PROJECTS: PortfolioProject[] = [
 
   {
     id: 'blazik-app',
-
     name: 'Blazik App',
-
+    imageUrl: '/portfolio/projects/blazik-app.webp',
     category: 'Modular Business Management Platform',
-
     description:
       'A personal project currently in development, designed to integrate independent business modules into a centralized administration system. Built with a modular Laravel architecture using Composer packages, reusable administrative interfaces, centralized authentication, RBAC, and automated deployment workflows.',
-
     technologies: [
       'PHP',
       'Laravel 12',
@@ -190,11 +174,9 @@ export const PROJECTS: PortfolioProject[] = [
 
   {
     id: '72market',
-
     name: '72Market',
-
+    imageUrl: '/portfolio/projects/72market.webp',
     category: 'E-commerce Platform',
-
     description:
       'A football footwear e-commerce platform featuring product management, brand and category management, user authentication, and image management.',
 
