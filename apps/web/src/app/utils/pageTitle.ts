@@ -16,6 +16,7 @@ const pageTitles: Record<string, string> = {
 
     '/check-email': 'Kiểm tra email',
     '/verify-email': 'Xác thực email',
+    '/portfolio': 'Personal Portfolio | NNT',
 };
 
 export function getPageTitle(pathname: string): string {

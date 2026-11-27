@@ -53,6 +53,12 @@ export default function Footer() {
               >
                 Thương hiệu
               </a>
+              <Link
+                to="/portfolio"
+                className="transition hover:text-white"
+              >
+                About Developer
+              </Link>
             </div>
           </div>
 
