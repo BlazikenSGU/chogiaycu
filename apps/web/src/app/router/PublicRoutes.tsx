@@ -12,11 +12,16 @@ import CheckEmailPage from '../../features/auth/pages/CheckEmailPage';
 import VerifyEmailPage from '../../features/auth/pages/VerifyEmailPage';
 
 import ProductDetailPage from '../../features/products/pages/ProductDetailPage';
+import PortfolioPage from '../../features/portfolio/pages/PortfolioPage';
 
 export const publicRoutes: RouteObject[] = [
   {
     index: true,
     element: <HomePage />,
+  },
+  {
+    path: '/portfolio',
+    element: <PortfolioPage />,
   },
   {
     path: '/products/:slug',

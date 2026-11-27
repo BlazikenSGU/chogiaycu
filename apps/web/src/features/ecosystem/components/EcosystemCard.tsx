@@ -1,15 +1,8 @@
-import {
-  ShoppingCartPlus,
-  BuildingComplex,
-  MapPinHouse,
-  NotebookPen,
-  ArrowUpRight,
-} from 'lucide-react';
+import { ArrowUpRight } from 'lucide-react';
 
 import { Link } from 'react-router-dom';
 
 import type {
-  EcosystemIcon,
   EcosystemProduct,
 } from '../types/ecosystem.types';
 
@@ -17,26 +10,20 @@ import {
   DEPLOYMENT_LABELS,
 } from '../config/ecosystem.config';
 
+import {
+  ECOSYSTEM_ICON_MAP,
+} from '../config/ecosystem-icons.config';
+
 import EcosystemStatusBadge from './EcosystemStatusBadge';
 
 interface Props {
   product: EcosystemProduct;
 }
 
-const ICON_MAP = {
-  commerce: ShoppingCartPlus,
-  crm: BuildingComplex,
-  realestate: MapPinHouse,
-  course: NotebookPen,
-} satisfies Record<
-  EcosystemIcon,
-  typeof ShoppingCartPlus
->;
-
 export default function EcosystemCard({
   product,
 }: Props) {
-  const Icon = ICON_MAP[product.icon];
+  const Icon = ECOSYSTEM_ICON_MAP[product.icon];
 
   return (
     <article

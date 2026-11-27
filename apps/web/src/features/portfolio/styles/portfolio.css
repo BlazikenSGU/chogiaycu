@@ -1,0 +1,117 @@
+.portfolio-root {
+  --pf-background: #ffffff;
+  --pf-foreground: #171717;
+  --pf-card: #ffffff;
+  --pf-muted: #f5f5f5;
+  --pf-muted-foreground: #737373;
+  --pf-border: #e5e5e5;
+  --pf-primary: #171717;
+  --pf-primary-foreground: #ffffff;
+
+  min-height: 100vh;
+  background: var(--pf-background);
+  color: var(--pf-foreground);
+  color-scheme: light;
+}
+
+.portfolio-root[data-theme='dark'] {
+  --pf-background: #0a0a0a;
+  --pf-foreground: #fafafa;
+  --pf-card: #141414;
+  --pf-muted: #262626;
+  --pf-muted-foreground: #a3a3a3;
+  --pf-border: #303030;
+  --pf-primary: #fafafa;
+  --pf-primary-foreground: #171717;
+
+  color-scheme: dark;
+}
+
+.portfolio-root section[id] {
+  scroll-margin-top: 100px;
+}
+
+.portfolio-root .pf-container {
+  width: 100%;
+  max-width: 1152px;
+  margin-inline: auto;
+  padding-inline: 24px;
+}
+
+.portfolio-root .pf-card {
+  border: 1px solid var(--pf-border);
+  border-radius: 12px;
+  background: var(--pf-card);
+}
+
+.portfolio-root .pf-muted {
+  background: var(--pf-muted);
+}
+
+.portfolio-root .pf-text-muted {
+  color: var(--pf-muted-foreground);
+}
+
+.portfolio-root .pf-border {
+  border-color: var(--pf-border);
+}
+
+.portfolio-root .pf-section {
+  padding-block: 72px;
+}
+
+.portfolio-root .pf-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 10px 16px;
+  border-radius: 7px;
+  font-size: 14px;
+  font-weight: 500;
+  transition: opacity 0.2s, background 0.2s;
+}
+
+.portfolio-root .pf-button:hover {
+  opacity: 0.85;
+}
+
+.portfolio-root .pf-button:disabled {
+  cursor: not-allowed;
+  opacity: 0.5;
+}
+
+.portfolio-root .pf-button-primary {
+  background: var(--pf-primary);
+  color: var(--pf-primary-foreground);
+}
+
+.portfolio-root .pf-button-outline {
+  border: 1px solid var(--pf-border);
+  color: var(--pf-foreground);
+}
+
+.portfolio-root .pf-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 4px 9px;
+  border: 1px solid var(--pf-border);
+  border-radius: 6px;
+  font-size: 11px;
+  font-weight: 500;
+}
+
+.portfolio-root :focus-visible {
+  outline: 2px solid var(--pf-muted-foreground);
+  outline-offset: 3px;
+}
+
+@media (max-width: 640px) {
+  .portfolio-root .pf-container {
+    padding-inline: 20px;
+  }
+
+  .portfolio-root .pf-section {
+    padding-block: 44px;
+  }
+}
