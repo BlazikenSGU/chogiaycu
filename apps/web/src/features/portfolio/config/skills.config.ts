@@ -34,7 +34,6 @@ export const SKILL_CATEGORIES: SkillCategory[] = [
       technology('erpnext', 'ERPNext'),
       technology('nodejs', 'Node.js'),
       technology('nestjs', 'NestJS'),
-      technology('slim', 'Slim Framework'),
       technology('codeigniter', 'CodeIgniter'),
       technology('rest-api', 'RESTful APIs'),
       technology('jwt', 'JWT'),
@@ -118,7 +117,7 @@ export const SKILL_CATEGORIES: SkillCategory[] = [
       'Cloud platforms and third-party application services.',
 
     skills: [
-      technology('aws-s3', 'AWS S3'),
+      technology('aws', 'AWS'),
       technology('cloudinary', 'Cloudinary'),
       technology('cloudflare', 'Cloudflare Pages'),
       technology('imagekit', 'ImageKit'),

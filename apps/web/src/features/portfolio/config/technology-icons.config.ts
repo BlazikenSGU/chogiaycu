@@ -208,11 +208,6 @@ export const TECHNOLOGY_ICONS = {
     color: '#2490EF',
   },
 
-  slim: {
-    icon: Code2,
-    color: '#64748B',
-  },
-
   codeigniter: {
     icon: SiCodeigniter,
     color: '#EF4223',
@@ -318,7 +313,7 @@ export const TECHNOLOGY_ICONS = {
     color: '#885630',
   },
 
-  'aws-s3': {
+  'aws': {
     icon: FaAws,
     color: '#FF9900',
   },

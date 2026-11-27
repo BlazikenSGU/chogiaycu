@@ -27,7 +27,6 @@ export type TechnologyIcon =
   | 'flask'
   | 'frappe'
   | 'erpnext'
-  | 'slim'
   | 'codeigniter'
   | 'vue'
   | 'nextjs'
@@ -49,7 +48,7 @@ export type TechnologyIcon =
   | 'cicd'
   | 'github-actions'
   | 'composer'
-  | 'aws-s3'
+  | 'aws'
   | 'cloudinary'
   | 'rbac'
   | 'multi-tenant';
